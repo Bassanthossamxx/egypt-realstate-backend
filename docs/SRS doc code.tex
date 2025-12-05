@@ -1,0 +1,228 @@
+\documentclass[12pt]{article}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\title{\textbf{Software Requirements Specification (SRS)} \\ Egypt Real-State Platform - 21 website}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\onehalfspacing
+
+% ---------------- INTRODUCTION ----------------
+\section{Introduction}
+
+The Egy Real-State Platform "21 website" is a bilingual (Arabic/English) digital real-estate ecosystem designed to support property browsing, project management, and customer engagement across multiple interfaces. The system provides both light and dark mode support and aims to streamline interactions between customers, managers, staff members, and real-estate developers.
+
+The solution consists of:
+\begin{itemize}
+    \item Public website for customers
+    \item Mobile application (Flutter)
+    \item Internal administrative dashboard (Manager and Staff)
+    \item External Developer Portal
+    \item Backend system integrated \& tracking system and AI recommendation services
+\end{itemize}
+
+This document outlines the functional and non-functional requirements for 21 realstate website of the system.
+
+% ---------------- GOAL ----------------
+\section{Goal}
+
+The goal of this system is to deliver a secure, scalable, and high-quality real-estate platform that enables efficient listing, management, and exploration of real-estate units and projects. The platform integrates intelligent recommendation capabilities and provides seamless interaction across all user roles.
+
+% ---------------- OBJECTIVES ----------------
+\section{Objectives}
+
+\begin{itemize}[noitemsep]
+    \item Develop a unified bilingual digital presence accessible via web and mobile.
+    \item Deliver structured browsing capabilities, including filtering and comparison.
+    \item Provide a standardized process for customer inquiries and lead capture.
+    \item Enable managers and staff to manage platform content through a centralized dashboard.
+    \item Provide developers with a portal to manage their own projects and units.
+    \item Implement an AI-driven recommendation and user behavior tracking system..
+    \item Maintain consistent UI/UX design with light/dark mode across all platforms.
+\end{itemize}
+
+% ---------------- STAKEHOLDERS ----------------
+\section{Stakeholders}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Customers}: Explore units, projects, developers, and submit inquiries.
+    \item \textbf{Managers}: Full administrative access, system-wide control.
+    \item \textbf{Staff}: Limited dashboard access for content management.
+    \item \textbf{Real-Estate Developers}: Manage own listings via Developer Portal.
+\end{itemize}
+
+% ---------------- FUNCTIONAL REQUIREMENTS ----------------
+\section{Functional Requirements}
+
+\subsection{Customer Website and Mobile Application}
+
+\subsubsection{Landing Page Requirements}
+\begin{itemize}
+    \item Display most popular units and projects.
+    \item Display trending/popular areas.
+    \item Display newest units and projects.
+    \item Provide AI-powered recommendations based on user behavior.
+    \item Display resale units.
+    \item Display partner developers.
+    \item Provide a global search bar with multi-parameter search.
+    \item Provide quick-access communication options (WhatsApp, Messenger, Call).
+    \item Include footer with standard informational sections.
+\end{itemize}
+
+\subsubsection{Navigation Bar Requirements}
+\begin{itemize}
+    \item Access units listing.
+    \item Access developers listing.
+    \item Access projects listing.
+    \item Access areas and countries.
+    \item Enable users to compare units.
+    \item Access ``Who We Are'' informational page.
+    \item Provide Login/Register for unauthenticated users or Logout for authenticated users.
+\end{itemize}
+
+% ---------------- PROJECTS ----------------
+\subsection{Projects Module}
+
+\subsubsection{Projects Listing}
+\begin{itemize}
+    \item Display all projects in card format (title, location, price range, cover image).
+    \item Provide filtering and search functionalities.
+\end{itemize}
+
+\subsubsection{Project Details}
+\begin{itemize}
+    \item Provide image and video gallery.
+    \item Display title, detailed description, and location map.
+    \item Display available units under the project.
+    \item Display pricing information and feature list.
+    \item Provide rating functionality.
+    \item Provide a customer inquiry form with auto-filled interest fields.
+\end{itemize}
+
+% ---------------- DEVELOPERS ----------------
+\subsection{Developers Module}
+
+\subsubsection{Developers Listing}
+\begin{itemize}
+    \item Display all developers with name, logo, and quick overview.
+    \item Provide search and filtering options.
+\end{itemize}
+
+\subsubsection{Developer Details}
+\begin{itemize}
+    \item Display detailed profile including name, description, and logo.
+    \item Display all related projects.
+\end{itemize}
+
+% ---------------- UNITS ----------------
+\subsection{Units Module}
+
+\subsubsection{Units Listing}
+\begin{itemize}
+    \item Display units as cards (main image, title, price, developer, location, summary details).
+    \item Provide advanced search and filtering.
+\end{itemize}
+
+\subsubsection{Unit Details}
+\begin{itemize}
+    \item Display image gallery and descriptive content.
+    \item Display unit features, technical specifications, and payment plans.
+    \item Provide location map and optional video content.
+    \item Provide customer inquiry form with pre-defined interest context.
+\end{itemize}
+
+% ---------------- AREAS ----------------
+\subsection{Areas and Countries}
+\begin{itemize}
+    \item List all areas and countries with image and title.
+    \item On selection: display related projects.
+    \item Provide search and filtering.
+\end{itemize}
+
+% ---------------- DASHBOARD ----------------
+\section{Dashboard (Manager \& Staff)}
+
+\subsection{Dashboard Features}
+\begin{itemize}
+    \item Full CRUD management for units, projects, developers, areas, countries, features, and unit types.
+    \item Access and manage submitted customer inquiries.
+    \item View complete customer list.
+\end{itemize}
+
+\subsection{User Roles}
+\begin{itemize}
+    \item \textbf{Manager}: Full system access including deletion and oversight functions.
+    \item \textbf{Staff}: Restricted access limited to content creation and modification.
+\end{itemize}
+
+% ---------------- DEVELOPER PORTAL ----------------
+\section{Developer Portal}
+\begin{itemize}
+    \item Allow developer login via secure authentication.
+    \item Enable developers to create, update, and delete their own units and projects.
+    \item Restrict access to developer-owned data only.
+    \item Provide optional registration for new developer accounts.
+\end{itemize}
+
+% ---------------- CRM ----------------
+\section{CRM Integration}
+\begin{itemize}
+    \item Sync customer inquiries via API or webhook.
+    \item Capture and forward user behavioral tracking for CRM workflows.
+\end{itemize}
+
+% ---------------- NON-FUNCTIONAL REQUIREMENTS ----------------
+\section{Non-Functional Requirements}
+
+\subsection{Security Requirements}
+\begin{itemize}
+    \item Implement JWT-based authentication.
+    \item Apply role-based access control (RBAC).
+    \item Enforce API rate limiting to prevent abuse.
+    \item Store passwords securely using hashing and salting.
+    \item Require HTTPS for all service endpoints.
+    \item Apply rigorous input validation for all API requests.
+    \item Maintain audit logs for administrative actions.
+\end{itemize}
+
+\subsection{Performance Requirements}
+\begin{itemize}
+    \item Maintain average API response time below 300ms.
+    \item Use caching layers for frequently accessed content.
+    \item Implement database indexing and optimized queries.
+    \item Use pagination for all data-heavy endpoints.
+    \item Run resource-intensive operations asynchronously (AI).
+    \item Serve static media through CDN.
+\end{itemize}
+
+\subsection{Quality Requirements}
+\begin{itemize}
+    \item Provide complete bilingual support (Arabic/English).
+    \item Support both light and dark UI modes.
+    \item Ensure consistent UI/UX across all platforms.
+    \item System must scale to support a minimum of 5,000 daily active users.
+    \item Maintain clean code practices: linting, documentation, automated testing.
+\end{itemize}
+
+% ---------------- EXTERNAL INTERACTIONS ----------------
+\section{External Interactions}
+
+\begin{itemize}
+    \item \textbf{Mobile Application (Flutter)}: Communicates via public API endpoints.
+    \item \textbf{Customer Website}: Utilizes the same API layer.
+    \item \textbf{Dashboard}: Accesses privileged admin endpoints.
+    \item \textbf{Developer Portal}: Uses developer-restricted API routes.
+    \item \textbf{CRM System}: Integrated through API/Webhook.
+    \item \textbf{Messaging Platforms}: Integrated via deep links (WhatsApp, Messenger).
+    \item \textbf{Map Service Provider}: Used for project and unit geolocation.
+    \item \textbf{AI Engine}: Internal service consumes and processes user behavior data.
+\end{itemize}
+
+\end{document}
