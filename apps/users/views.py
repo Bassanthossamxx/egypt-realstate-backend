@@ -4,8 +4,14 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserSerializer, RegisterSerializer, CustomTokenObtainPairSerializer
-from .models import User
+from apps.core.permissions import IsCustomer, IsStaffOrHigher
+from .serializers import (
+    UserSerializer,
+    RegisterSerializer,
+    CustomTokenObtainPairSerializer,
+    CustomerInquirySerializer,
+)
+from .models import User, CustomerInquiry
 
 
 class RegisterView(generics.CreateAPIView):
@@ -83,4 +89,16 @@ class MeView(generics.RetrieveUpdateAPIView):
 
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
+
+
+class CustomerInquiryListCreateView(generics.ListCreateAPIView):
+    queryset = CustomerInquiry.objects.select_related('customer').all()
+    serializer_class = CustomerInquirySerializer
+
+    def get_permissions(self):
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            return [IsStaffOrHigher()]
+        if self.request.method == 'POST':
+            return [IsCustomer()]
+        return []
 

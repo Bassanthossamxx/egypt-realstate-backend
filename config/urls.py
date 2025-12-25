@@ -9,6 +9,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Authentication
     path("api/auth/", include("apps.users.urls")),
+    # Customer
+    path("api/customer/", include("apps.users.customer_urls")),
     # Core API
     path("api/", include("apps.core.urls")),
     # Swagger

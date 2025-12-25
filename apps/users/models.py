@@ -87,3 +87,29 @@ class User(AbstractUser):
     @property
     def is_customer(self):
         return self.role == UserRoles.CUSTOMER
+
+
+class CustomerInquiry(models.Model):
+    customer = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        related_name='customer_inquiries'
+    )
+    phone = models.CharField(_('phone number'), max_length=20)
+    message = models.TextField(_('message'))
+    interested_in = models.CharField(_('interested in'), max_length=100)
+
+    # Project/Unit models are not present in the codebase yet.
+    # Store their IDs as optional integers to match the ERD intent.
+    project_id = models.PositiveBigIntegerField(_('project id'), blank=True, null=True)
+    unit_id = models.PositiveBigIntegerField(_('unit id'), blank=True, null=True)
+
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('customer inquiry')
+        verbose_name_plural = _('customer inquiries')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Inquiry #{self.id} by {self.customer_id}"

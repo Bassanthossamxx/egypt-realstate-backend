@@ -13,7 +13,7 @@ Usage Example:
     permission_classes = [IsStaffOrHigher]
 """
 from rest_framework import permissions
-from apps.users.models import UserRoles
+from apps.core.choices import UserRoles
 
 
 # ============================================================================

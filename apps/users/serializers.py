@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import User
+from .models import User, CustomerInquiry
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -103,3 +103,37 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
         return data
+
+
+class CustomerInquirySerializer(serializers.ModelSerializer):
+    customer_id = serializers.IntegerField(source='customer.id', read_only=True)
+
+    class Meta:
+        model = CustomerInquiry
+        fields = [
+            'id',
+            'customer_id',
+            'phone',
+            'message',
+            'interested_in',
+            'project_id',
+            'unit_id',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'customer_id', 'created_at']
+
+    def validate(self, attrs):
+        project_id = attrs.get('project_id')
+        unit_id = attrs.get('unit_id')
+        if not project_id and not unit_id:
+            raise serializers.ValidationError(
+                'Provide project_id and/or unit_id.'
+            )
+        return attrs
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        return CustomerInquiry.objects.create(
+            customer=request.user,
+            **validated_data
+        )
