@@ -9,6 +9,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Authentication
     path("api/auth/", include("apps.users.urls")),
+    # Core API
+    path("api/", include("apps.core.urls")),
     # Swagger
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
