@@ -4,12 +4,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema, OpenApiResponse
 from .serializers import UserSerializer, RegisterSerializer, CustomTokenObtainPairSerializer
 from .models import User
 
 
-@extend_schema(tags=['Authentication'])
 class RegisterView(generics.CreateAPIView):
     """
     Register a new user account.
@@ -19,12 +17,6 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
-    @extend_schema(
-        responses={
-            201: OpenApiResponse(description='User successfully registered'),
-            400: OpenApiResponse(description='Invalid input data')
-        }
-    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -36,8 +28,7 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
-@extend_schema(tags=['Authentication'])
-class CustomTokenObtainPairView(TokenObtainPairView):
+class LoginView(TokenObtainPairView):
     """
     Login with email and password.
     Returns access and refresh tokens with user data and role.
@@ -46,28 +37,11 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
 
 
-@extend_schema(tags=['Authentication'])
 class LogoutView(APIView):
     """
     Logout the current user by blacklisting the refresh token.
     """
     permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        request={
-            'application/json': {
-                'type': 'object',
-                'properties': {
-                    'refresh': {'type': 'string', 'description': 'Refresh token to blacklist'}
-                },
-                'required': ['refresh']
-            }
-        },
-        responses={
-            205: OpenApiResponse(description='Successfully logged out'),
-            400: OpenApiResponse(description='Invalid token')
-        }
-    )
     def post(self, request):
         try:
             refresh_token = request.data.get('refresh')
@@ -91,7 +65,6 @@ class LogoutView(APIView):
             )
 
 
-@extend_schema(tags=['Authentication'])
 class MeView(generics.RetrieveUpdateAPIView):
     """
     Get or update current user profile.
@@ -102,29 +75,12 @@ class MeView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
-    @extend_schema(
-        responses={
-            200: UserSerializer
-        }
-    )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
-
-    @extend_schema(
-        responses={
-            200: UserSerializer,
-            400: OpenApiResponse(description='Invalid input data')
-        }
-    )
+    
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
 
-    @extend_schema(
-        responses={
-            200: UserSerializer,
-            400: OpenApiResponse(description='Invalid input data')
-        }
-    )
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
 

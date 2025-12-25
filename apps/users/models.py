@@ -1,53 +1,41 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
-
-
-class UserRoles(models.TextChoices):
-    CUSTOMER = 'customer', _('Customer')
-    DEVELOPER = 'developer', _('Developer')
-    CONTENT_CREATOR = 'content_creator', _('Content Creator')
-    STAFF = 'staff', _('Staff')
-    MANAGER = 'manager', _('Manager')
-    SUPERADMIN = 'superadmin', _('Superadmin')
+from apps.core.choices import UserRoles
 
 
 class UserManager(BaseUserManager):
-    """Custom user manager for User model with email as the unique identifier."""
-    
-    def create_user(self, email, full_name, password=None, **extra_fields):
-        """Create and save a regular user with the given email and password."""
+    """Custom user manager that uses email instead of username."""
+
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError(_('The Email field must be set'))
-        if not full_name:
-            raise ValueError(_('The Full Name field must be set'))
-        
+
         email = self.normalize_email(email)
-        user = self.model(email=email, full_name=full_name, **extra_fields)
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
-    
-    def create_superuser(self, email, full_name, password=None, **extra_fields):
-        """Create and save a superuser with the given email and password."""
+
+    def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
         extra_fields.setdefault('role', UserRoles.SUPERADMIN)
-        
+
         if extra_fields.get('is_staff') is not True:
             raise ValueError(_('Superuser must have is_staff=True.'))
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(_('Superuser must have is_superuser=True.'))
-        
-        return self.create_user(email, full_name, password, **extra_fields)
+
+        return self.create_user(email, password=password, **extra_fields)
 
 
 class User(AbstractUser):
     username = None
     email = models.EmailField(_('email address'), unique=True)
     full_name = models.CharField(_('full name'), max_length=255)
-    phone = models.CharField(_('phone number'), max_length=20, blank=True, null=True)
+    phone = models.BigIntegerField(_('phone number'), blank=True, null=True)
     role = models.CharField(
         _('role'),
         max_length=20,
