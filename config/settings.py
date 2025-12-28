@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.units",
     "apps.core",
+    "apps.projects",
+    "apps.developers",
     ]
 
 REST_FRAMEWORK = {
