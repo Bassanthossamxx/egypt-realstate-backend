@@ -44,8 +44,8 @@ class SliderSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'image',
-            'image_url',
             'appear_on_home_page',
+            'index',
             'created_at'
         ]
         read_only_fields = ['id', 'created_at']
@@ -57,7 +57,6 @@ class AdSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'image',
-            'image_url',
             'appear_place',
             'created_at'
         ]

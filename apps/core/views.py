@@ -78,7 +78,7 @@ class SliderViewSet(viewsets.ModelViewSet):
     - Staff can create and edit (POST, PUT, PATCH)
     - Manager and Superadmin can delete (DELETE)
     """
-    queryset = Slider.objects.all()
+    queryset = Slider.objects.all().order_by('index')
     serializer_class = SliderSerializer
     
     def get_permissions(self):

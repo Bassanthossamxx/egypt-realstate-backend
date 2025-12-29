@@ -1,6 +1,13 @@
 from django.db import models
 from django.conf import settings
 
+from apps.core.validation import (
+    validate_arabic_text,
+    validate_english_text,
+    validate_http_https_url,
+    validate_image_extension,
+)
+
 
 class Developer(models.Model):
     user = models.OneToOneField(
@@ -9,14 +16,14 @@ class Developer(models.Model):
         related_name="developer_profile"
     )
 
-    name_en = models.CharField(max_length=255) #validation english
-    name_ar = models.CharField(max_length=255) #validation arabic
+    name_en = models.CharField(max_length=255, validators=[validate_english_text])
+    name_ar = models.CharField(max_length=255, validators=[validate_arabic_text])
 
-    description_en = models.TextField(blank=False,null=False) #validation english
-    description_ar = models.TextField(blank=False ,null=False) #validation arabic
+    description_en = models.TextField(blank=False,null=False, validators=[validate_english_text])
+    description_ar = models.TextField(blank=False ,null=False, validators=[validate_arabic_text])
 
-    logo = models.ImageField(upload_to="developers/logos/") #required
-    website_url = models.URLField(blank=True) #validation url
+    logo = models.ImageField(upload_to="developers/logos/", validators=[validate_image_extension])
+    website_url = models.CharField(max_length=500, blank=True, validators=[validate_http_https_url])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

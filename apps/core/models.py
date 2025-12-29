@@ -1,9 +1,17 @@
 from django.db import models
 from .choices import AD_APPEAR_PLACES
+from .validation import (
+    validate_arabic_text,
+    validate_english_text,
+    validate_image_extension,
+    validate_image_webp_only,
+    validate_markdown_text,
+)
+
 class Country(models.Model):
-    name_en = models.CharField(max_length=255,unique=True) #validation english 
-    name_ar = models.CharField(max_length=255,unique=True) #validation arabic
-    image = models.ImageField(upload_to="countries/")
+    name_en = models.CharField(max_length=255,unique=True, validators=[validate_english_text])
+    name_ar = models.CharField(max_length=255,unique=True, validators=[validate_arabic_text])
+    image = models.ImageField(upload_to="countries/", validators=[validate_image_webp_only])
 
     appear_on_home_page = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -21,11 +29,9 @@ class City(models.Model):
         related_name="cities"
     )
 
-    name_en = models.CharField(max_length=255) #validation english 
-    name_ar = models.CharField(max_length=255) #validation arabic
-
-    # LOCAL(dev):
-    image = models.ImageField(upload_to="cities/")
+    name_en = models.CharField(max_length=255, validators=[validate_english_text])
+    name_ar = models.CharField(max_length=255, validators=[validate_arabic_text])
+    image = models.ImageField(upload_to="cities/", validators=[validate_image_webp_only])
     appear_on_home_page = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -37,16 +43,19 @@ class City(models.Model):
         return f"{self.name_en} ({self.country.name_en})"
 
 class Slider(models.Model):
-    image = models.ImageField(upload_to="sliders/") #required
+    image = models.ImageField(upload_to="sliders/", validators=[validate_image_extension])
     appear_on_home_page = models.BooleanField(default=True)
-    index = models.IntegerField(default=0) #order of appearance and increasing
+    index = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["index", "id"]
 
     def __str__(self):
         return f"Slider {self.id}"
 
 class Ad(models.Model):
-    image = models.ImageField(upload_to="ads/")
+    image = models.ImageField(upload_to="ads/", validators=[validate_image_extension])
     appear_place = models.CharField(
         max_length=20,
         choices=AD_APPEAR_PLACES
@@ -57,26 +66,30 @@ class Ad(models.Model):
         return f"Ad ({self.appear_place})"
 
 class Feature(models.Model):
-    name_en = models.CharField(max_length=255) #validation english
-    name_ar = models.CharField(max_length=255) #validation arabic
+    name_en = models.CharField(max_length=255, validators=[validate_english_text])
+    name_ar = models.CharField(max_length=255, validators=[validate_arabic_text])
 
     def __str__(self):
         return self.name_en
 
 class Article(models.Model):
-    title_en = models.CharField(max_length=255) #validation english
-    title_ar = models.CharField(max_length=255) #validation arabic
+    title_en = models.CharField(max_length=255, validators=[validate_english_text]) 
+    title_ar = models.CharField(max_length=255, validators=[validate_arabic_text])
 
     # Markdown content
     content_en_md = models.TextField(
         help_text="Markdown content (English)"
+    ,
+        validators=[validate_markdown_text, validate_english_text],
     ) #validation english and markdown
     content_ar_md = models.TextField(
         help_text="Markdown content (Arabic)"
+    ,
+        validators=[validate_markdown_text, validate_arabic_text],
     ) #validation arabic and markdown
 
     meta = models.JSONField(blank=True, null=True)
-    image = models.ImageField(upload_to="articles/")
+    image = models.ImageField(upload_to="articles/", validators=[validate_image_webp_only])
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

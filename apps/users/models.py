@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from apps.core.choices import UserRoles
+from apps.core.validation import (
+    validate_phone_number,
+)
 
 
 class UserManager(BaseUserManager):
@@ -35,7 +38,13 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(_('email address'), unique=True)
     full_name = models.CharField(_('full name'), max_length=255)
-    phone = models.BigIntegerField(_('phone number'), blank=True, null=True) #need validation numbers and + only
+    phone = models.CharField(
+        _('phone number'),
+        max_length=20,
+        blank=True,
+        null=True,
+        validators=[validate_phone_number],
+    )
     role = models.CharField(
         _('role'),
         max_length=20,
@@ -46,7 +55,7 @@ class User(AbstractUser):
         _('profile image'),
         upload_to='users/profiles/',
         blank=True,
-        null=True
+        null=True,
     )
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True)
@@ -95,7 +104,11 @@ class CustomerInquiry(models.Model):
         on_delete=models.CASCADE,
         related_name='customer_inquiries'
     )
-    phone = models.CharField(_('phone number'), max_length=20) #need validation numbers and + only
+    phone = models.CharField(
+        _('phone number'),
+        max_length=20,
+        validators=[validate_phone_number],
+    ) 
     message = models.TextField(_('message'))
     #todo : change to choices of unit types later
     interested_in = models.CharField(_('interested in'), max_length=100)
