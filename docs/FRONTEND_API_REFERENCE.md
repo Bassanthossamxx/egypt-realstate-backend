@@ -42,7 +42,7 @@ Required:
 - `password_confirm` (string; must match `password`)
 
 Optional:
-- `phone` (number; can be null)
+- `phone` (string; digits with optional leading `+`; can be null)
 - `profile_image` (file upload)
 
 **Example (JSON)**
@@ -51,7 +51,7 @@ Optional:
 {
   "email": "user@example.com",
   "full_name": "John Doe",
-  "phone": 201234567890,
+  "phone": "201234567890",
   "password": "StrongPassword123!",
   "password_confirm": "StrongPassword123!"
 }
@@ -64,11 +64,17 @@ Optional:
 ```json
 {
   "message": "User registered successfully",
+  "refresh": "<refresh_token>",
+  "access": "<access_token>",
+  "access_expires_at": "2025-12-29T15:00:00+00:00",
+  "refresh_expires_at": "2026-01-28T15:00:00+00:00",
+  "access_expires_in": 86400,
+  "refresh_expires_in": 2592000,
   "user": {
     "id": 1,
     "email": "user@example.com",
     "full_name": "John Doe",
-    "phone": 201234567890,
+    "phone": "201234567890",
     "role": "customer",
     "profile_image": null,
     "is_active": true,
@@ -131,15 +137,24 @@ Required:
 {
   "refresh": "<refresh_token>",
   "access": "<access_token>",
+  "access_expires_at": "2025-12-29T15:00:00+00:00",
+  "refresh_expires_at": "2026-01-28T15:00:00+00:00",
+  "access_expires_in": 86400,
+  "refresh_expires_in": 2592000,
   "user": {
     "id": 1,
     "email": "user@example.com",
     "full_name": "John Doe",
     "role": "customer",
-    "phone": 201234567890,
+    "phone": "+201234567890",
     "profile_image": null
   }
 }
+
+**Token expiry fields**
+
+- `access_expires_at`, `refresh_expires_at`: ISO timestamps
+- `access_expires_in`, `refresh_expires_in`: seconds remaining (dynamic)
 ```
 
 **Common error responses**
@@ -264,7 +279,7 @@ Required:
   "id": 1,
   "email": "user@example.com",
   "full_name": "John Doe",
-  "phone": 201234567890,
+  "phone": "+201234567890",
   "role": "customer",
   "profile_image": null,
   "is_active": true,
@@ -277,7 +292,7 @@ Required:
 
 - `email` (string)
 - `full_name` (string)
-- `phone` (number or null)
+- `phone` (string or null)
 - `profile_image` (file upload; use `multipart/form-data`)
 - `is_active` (boolean)
 
@@ -290,7 +305,7 @@ Not updatable:
 ```json
 {
   "full_name": "John Doe Updated",
-  "phone": 201000000000
+  "phone": "+201000000000"
 }
 ```
 
@@ -317,18 +332,8 @@ Core permission rules implemented in `apps/core/permissions.py`.
 
 ## Core API endpoints (`/api/`)
 
-These are standard DRF `ModelViewSet` endpoints.
 
-For each resource, the following routes exist:
-
-- **GET** `/api/<resource>/` (list)
-- **POST** `/api/<resource>/` (create)
-- **GET** `/api/<resource>/{id}/` (retrieve)
-- **PUT** `/api/<resource>/{id}/` (full update)
-- **PATCH** `/api/<resource>/{id}/` (partial update)
-- **DELETE** `/api/<resource>/{id}/` (delete)
-
-### Common responses
+#### Common responses
 
 - List: **200 OK** → JSON array of objects
 - Retrieve: **200 OK** → JSON object
@@ -336,19 +341,24 @@ For each resource, the following routes exist:
 - Update (PUT/PATCH): **200 OK** → updated JSON object
 - Delete: **204 No Content**
 
-### Common errors
+#### Common errors
 
 - **400 Bad Request**: serializer validation errors
 - **401 Unauthorized**: missing/invalid JWT on protected routes
 - **403 Forbidden**: authenticated but insufficient role
 - **404 Not Found**: invalid `{id}`
 
-### Uploading `image` fields
+#### Uploading `image` fields
 
 Several core resources include an `image` field.
 
 - When sending an image file, use `multipart/form-data`.
 - When not uploading a file (e.g., only changing text fields), `application/json` is fine.
+
+**Allowed image formats (server validation)**
+
+- WebP only: Countries, Cities, Articles, and any other like units , projects ,...
+- Multiple formats allowed: Sliders, Ads, Developer `logo` (jpg/jpeg/png/webp)
 
 ---
 
@@ -466,8 +476,8 @@ Required on create:
 - `image` (file)
 
 Optional:
-- `image_url` (string URL; can be null)
 - `appear_on_home_page` (boolean; defaults to `true`)
+- `index` (number; controls ordering; lower comes first)
 
 Read-only:
 - `id`
@@ -479,10 +489,14 @@ Read-only:
 {
   "id": 1,
   "image": "/media/sliders/slide1.jpg",
-  "image_url": "https://example.com/landing",
   "appear_on_home_page": true,
+  "index": 0,
   "created_at": "2025-12-25T12:34:56Z"
 }
+
+**Ordering**
+
+- Sliders are returned ordered by `index` ascending, then `id`.
 ```
 
 ---
@@ -502,9 +516,6 @@ Required on create:
 - `image` (file)
 - `appear_place` (string; one of: `home`, `projects`, `units`, `other`)
 
-Optional:
-- `image_url` (string URL; can be null)
-
 Read-only:
 - `id`
 - `created_at`
@@ -513,7 +524,6 @@ Read-only:
 
 Fields:
 - `appear_place`: `home`
-- `image_url`: `https://example.com`
 - `image`: (file)
 
 **Response example**
@@ -522,7 +532,6 @@ Fields:
 {
   "id": 1,
   "image": "/media/ads/ad1.jpg",
-  "image_url": "https://example.com",
   "appear_place": "home",
   "created_at": "2025-12-25T12:34:56Z"
 }

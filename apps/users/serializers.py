@@ -1,8 +1,31 @@
+from datetime import datetime
+
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import User, CustomerInquiry
+
+
+def token_expiry_info(refresh: RefreshToken) -> dict:
+    """Return expiry timestamps + remaining seconds for refresh & access tokens."""
+    now = timezone.now()
+
+    refresh_exp = int(refresh["exp"])
+    refresh_expires_at = datetime.fromtimestamp(refresh_exp, tz=timezone.utc)
+
+    access = refresh.access_token
+    access_exp = int(access["exp"])
+    access_expires_at = datetime.fromtimestamp(access_exp, tz=timezone.utc)
+
+    return {
+        "access_expires_at": access_expires_at.isoformat(),
+        "refresh_expires_at": refresh_expires_at.isoformat(),
+        "access_expires_in": max(0, int((access_expires_at - now).total_seconds())),
+        "refresh_expires_in": max(0, int((refresh_expires_at - now).total_seconds())),
+    }
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -91,6 +114,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
+
+        refresh = self.get_token(self.user)
+        expiry = token_expiry_info(refresh)
+        data.update(expiry)
 
         # Add user data to response
         data['user'] = {

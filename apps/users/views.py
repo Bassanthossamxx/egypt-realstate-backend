@@ -10,6 +10,7 @@ from .serializers import (
     RegisterSerializer,
     CustomTokenObtainPairSerializer,
     CustomerInquirySerializer,
+    token_expiry_info,
 )
 from .models import User, CustomerInquiry
 
@@ -27,10 +28,16 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        refresh = RefreshToken.for_user(user)
+        expiry = token_expiry_info(refresh)
         
         return Response({
             'message': 'User registered successfully',
-            'user': UserSerializer(user).data
+            'user': UserSerializer(user).data,
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            **expiry,
         }, status=status.HTTP_201_CREATED)
 
 
