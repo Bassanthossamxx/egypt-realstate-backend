@@ -17,3 +17,20 @@ class UserRoles(models.TextChoices):
     STAFF = 'staff', _('Staff')
     MANAGER = 'manager', _('Manager')
     SUPERADMIN = 'superadmin', _('Superadmin')
+
+class ProjectStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    APPROVED = "approved", "Approved"
+    REJECTED = "rejected", "Rejected"
+
+
+class UnitStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    APPROVED = "approved", "Approved"
+    REJECTED = "rejected", "Rejected"
+
+
+class AddedByRoles(models.TextChoices):
+    MANAGER = "manager", "Manager"
+    STAFF = "staff", "Staff"
+    DEVELOPER = "developer", "Developer"
