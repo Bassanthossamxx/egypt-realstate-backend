@@ -109,3 +109,6 @@ class CustomerInquiryListCreateView(generics.ListCreateAPIView):
             return [IsCustomer()]
         return []
 
+    def perform_create(self, serializer):
+        serializer.save(customer=self.request.user)
+

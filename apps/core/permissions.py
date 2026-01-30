@@ -6,8 +6,8 @@ Usage Example:
     # For public GET requests - anyone can view
     permission_classes = [AllowAny]  # or IsAnonymousUser
     
-    # For articles - only content creators, managers, and superadmins
-    permission_classes = [IsContentCreator | IsManager | IsSuperadmin]
+    # For articles - only content creators, managers, and superusers
+    permission_classes = [IsContentCreator | IsManager | IsSuperuser]
     
     # For staff operations
     permission_classes = [IsStaffOrHigher]
@@ -88,15 +88,19 @@ class IsManager(permissions.BasePermission):
         )
 
 
-class IsSuperadmin(permissions.BasePermission):
+class IsSuperuser(permissions.BasePermission):
     """
-    Permission for Superadmin role.
+    Permission for Superuser role.
     """
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            request.user.role == UserRoles.SUPERADMIN
+            request.user.role == UserRoles.SUPERUSER
         )
+
+
+# Backward-compatible alias
+IsSuperadmin = IsSuperuser
 
 
 # ============================================================================
@@ -105,7 +109,7 @@ class IsSuperadmin(permissions.BasePermission):
 
 class IsStaffOrHigher(permissions.BasePermission):
     """
-    Permission for Staff, Manager, or Superadmin roles.
+    Permission for Staff, Manager, or Superuser roles.
     """
     def has_permission(self, request, view):
         return (
@@ -113,20 +117,20 @@ class IsStaffOrHigher(permissions.BasePermission):
             request.user.role in [
                 UserRoles.STAFF,
                 UserRoles.MANAGER,
-                UserRoles.SUPERADMIN
+                UserRoles.SUPERUSER
             ]
         )
 
 
 class IsManagerOrSuperadmin(permissions.BasePermission):
     """
-    Permission for Manager or Superadmin roles.
+    Permission for Manager or Superuser roles.
     Useful for delete operations and role upgrades.
     """
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            request.user.role in [UserRoles.MANAGER, UserRoles.SUPERADMIN]
+            request.user.role in [UserRoles.MANAGER, UserRoles.SUPERUSER]
         )
 
 

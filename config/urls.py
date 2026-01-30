@@ -5,6 +5,13 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+
+def _superuser_only_admin_has_permission(request):
+    return request.user.is_active and request.user.is_superuser
+
+
+admin.site.has_permission = _superuser_only_admin_has_permission
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     # Authentication
@@ -13,6 +20,8 @@ urlpatterns = [
     path("api/customer/", include("apps.users.customer_urls")),
     # Core API
     path("api/", include("apps.core.urls")),
+    # Units API
+    path("api/", include("apps.units.urls")),
     # Swagger
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

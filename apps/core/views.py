@@ -16,7 +16,7 @@ from .serializers import (
 from .permissions import (
     IsStaff,
     IsManager,
-    IsSuperadmin,
+    IsSuperuser,
     IsContentCreator,
     IsManagerOrSuperadmin
 )
@@ -30,7 +30,7 @@ class CountryViewSet(viewsets.ModelViewSet):
     Permissions:
     - Anyone can view (GET)
     - Staff can create and edit (POST, PUT, PATCH)
-    - Manager and Superadmin can delete (DELETE)
+    - Manager and Superuser can delete (DELETE)
     """
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
@@ -39,7 +39,7 @@ class CountryViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         elif self.action in ['create', 'update', 'partial_update']:
-            return [(IsStaff | IsManager | IsSuperadmin)()]
+            return [(IsStaff | IsManager | IsSuperuser)()]
         elif self.action == 'destroy':
             return [IsManagerOrSuperadmin()]
         return [AllowAny()]
@@ -53,7 +53,7 @@ class CityViewSet(viewsets.ModelViewSet):
     Permissions:
     - Anyone can view (GET)
     - Staff can create and edit (POST, PUT, PATCH)
-    - Manager and Superadmin can delete (DELETE)
+    - Manager and Superuser can delete (DELETE)
     """
     queryset = City.objects.all()
     serializer_class = CitySerializer
@@ -62,7 +62,7 @@ class CityViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         elif self.action in ['create', 'update', 'partial_update']:
-            return [(IsStaff | IsManager | IsSuperadmin)()]
+            return [(IsStaff | IsManager | IsSuperuser)()]
         elif self.action == 'destroy':
             return [IsManagerOrSuperadmin()]
         return [AllowAny()]
@@ -76,7 +76,7 @@ class SliderViewSet(viewsets.ModelViewSet):
     Permissions:
     - Anyone can view (GET)
     - Staff can create and edit (POST, PUT, PATCH)
-    - Manager and Superadmin can delete (DELETE)
+    - Manager and Superuser can delete (DELETE)
     """
     queryset = Slider.objects.all().order_by('index')
     serializer_class = SliderSerializer
@@ -85,7 +85,7 @@ class SliderViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         elif self.action in ['create', 'update', 'partial_update']:
-            return [(IsStaff | IsManager | IsSuperadmin)()]
+            return [(IsStaff | IsManager | IsSuperuser)()]
         elif self.action == 'destroy':
             return [IsManagerOrSuperadmin()]
         return [AllowAny()]
@@ -99,7 +99,7 @@ class AdViewSet(viewsets.ModelViewSet):
     Permissions:
     - Anyone can view (GET)
     - Staff can create and edit (POST, PUT, PATCH)
-    - Manager and Superadmin can delete (DELETE)
+    - Manager and Superuser can delete (DELETE)
     """
     queryset = Ad.objects.all()
     serializer_class = AdSerializer
@@ -108,7 +108,7 @@ class AdViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         elif self.action in ['create', 'update', 'partial_update']:
-            return [(IsStaff | IsManager | IsSuperadmin)()]
+            return [(IsStaff | IsManager | IsSuperuser)()]
         elif self.action == 'destroy':
             return [IsManagerOrSuperadmin()]
         return [AllowAny()]
@@ -121,7 +121,7 @@ class FeatureViewSet(viewsets.ModelViewSet):
     Permissions:
     - Anyone can view (GET)
     - Staff can create and edit (POST, PUT, PATCH)
-    - Manager and Superadmin can delete (DELETE)
+    - Manager and Superuser can delete (DELETE)
     """
     queryset = Feature.objects.all()
     serializer_class = FeatureSerializer
@@ -130,7 +130,7 @@ class FeatureViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         elif self.action in ['create', 'update', 'partial_update']:
-            return [(IsStaff | IsManager | IsSuperadmin)()]
+            return [(IsStaff | IsManager | IsSuperuser)()]
         elif self.action == 'destroy':
             return [IsManagerOrSuperadmin()]
         return [AllowAny()]
@@ -143,9 +143,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
     Permissions:
     - Anyone can view (GET)
-    - Content Creator can create, edit, and delete (POST, PUT, PATCH, DELETE)
-    - Staff can create and edit (POST, PUT, PATCH)
-    - Manager and Superadmin can do all operations
+    - Content Creator, Manager, or Superuser can create, edit, and delete (POST, PUT, PATCH, DELETE)
     """
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
@@ -154,7 +152,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         elif self.action in ['create', 'update', 'partial_update']:
-            return [(IsContentCreator | IsStaff | IsManager | IsSuperadmin)()]
+            return [(IsContentCreator | IsManager | IsSuperuser)()]
         elif self.action == 'destroy':
-            return [(IsContentCreator | IsManagerOrSuperadmin)()]
+            return [(IsContentCreator | IsManager | IsSuperuser)()]
         return [AllowAny()]

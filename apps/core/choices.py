@@ -16,7 +16,7 @@ class UserRoles(models.TextChoices):
     CONTENT_CREATOR = 'content_creator', _('Content Creator')
     STAFF = 'staff', _('Staff')
     MANAGER = 'manager', _('Manager')
-    SUPERADMIN = 'superadmin', _('Superadmin')
+    SUPERUSER = 'superuser', _('Superuser')
 
 class ProjectStatus(models.TextChoices):
     PENDING = "pending", "Pending"

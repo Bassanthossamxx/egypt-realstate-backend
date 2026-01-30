@@ -7,6 +7,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import User, CustomerInquiry
+from apps.units.models import UnitType
 
 
 def token_expiry_info(refresh: RefreshToken) -> dict:
@@ -134,6 +135,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomerInquirySerializer(serializers.ModelSerializer):
     customer_id = serializers.IntegerField(source='customer.id', read_only=True)
+    interested_in_name_en = serializers.CharField(source='interested_in.name_en', read_only=True)
+    interested_in_name_ar = serializers.CharField(source='interested_in.name_ar', read_only=True)
+    interested_in = serializers.PrimaryKeyRelatedField(
+        queryset=UnitType.objects.all(),
+        required=True,
+    )
 
     class Meta:
         model = CustomerInquiry
@@ -143,6 +150,8 @@ class CustomerInquirySerializer(serializers.ModelSerializer):
             'phone',
             'message',
             'interested_in',
+            'interested_in_name_en',
+            'interested_in_name_ar',
             'project_id',
             'unit_id',
             'created_at',
@@ -150,6 +159,9 @@ class CustomerInquirySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'customer_id', 'created_at']
 
     def validate(self, attrs):
+        if not attrs.get('interested_in'):
+            raise serializers.ValidationError({'interested_in': 'This field is required.'})
+
         project_id = attrs.get('project_id')
         unit_id = attrs.get('unit_id')
         if not project_id and not unit_id:
@@ -159,8 +171,11 @@ class CustomerInquirySerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        request = self.context.get('request')
-        return CustomerInquiry.objects.create(
-            customer=request.user,
-            **validated_data
-        )
+        customer = validated_data.pop('customer', None)
+        if customer is None:
+            request = self.context.get('request')
+            if request is None or request.user is None or not request.user.is_authenticated:
+                raise serializers.ValidationError({'customer': 'Authenticated user is required.'})
+            customer = request.user
+
+        return CustomerInquiry.objects.create(customer=customer, **validated_data)

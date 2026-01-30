@@ -24,7 +24,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
-        extra_fields.setdefault('role', UserRoles.SUPERADMIN)
+        extra_fields.setdefault('role', UserRoles.SUPERUSER)
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError(_('Superuser must have is_staff=True.'))
@@ -36,27 +36,27 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None
-    email = models.EmailField(_('email address'), unique=True)
-    full_name = models.CharField(_('full name'), max_length=255)
+    email = models.EmailField(_('email address'), unique=True) #required
+    full_name = models.CharField(_('full name'), max_length=255) #required
     phone = models.CharField(
         _('phone number'),
         max_length=20,
         blank=True,
         null=True,
         validators=[validate_phone_number],
-    )
+    ) #optional
     role = models.CharField(
         _('role'),
         max_length=20,
         choices=UserRoles.choices,
         default=UserRoles.CUSTOMER
-    )
+    ) #required
     profile_image = models.ImageField(
         _('profile image'),
         upload_to='users/profiles/',
         blank=True,
         null=True,
-    )
+    ) #optional
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True)
 
@@ -75,7 +75,12 @@ class User(AbstractUser):
 
     @property
     def is_superadmin(self):
-        return self.role == UserRoles.SUPERADMIN
+        # Backward-compatible alias (role was previously named "superadmin").
+        return self.role == UserRoles.SUPERUSER
+
+    @property
+    def is_superuser_role(self):
+        return self.role == UserRoles.SUPERUSER
 
     @property
     def is_manager(self):
@@ -99,6 +104,9 @@ class User(AbstractUser):
 
 
 class CustomerInquiry(models.Model):
+    """
+    Model to store customer inquiries about projects or units
+    """
     customer = models.ForeignKey(
         'users.User',
         on_delete=models.CASCADE,
@@ -110,9 +118,14 @@ class CustomerInquiry(models.Model):
         validators=[validate_phone_number],
     ) 
     message = models.TextField(_('message'))
-    #todo : change to choices of unit types later
-    interested_in = models.CharField(_('interested in'), max_length=100)
-
+    interested_in = models.ForeignKey(
+        'units.UnitType',
+        on_delete=models.SET_NULL,
+        related_name='customer_inquiries',
+        blank=True,
+        null=True,
+        verbose_name=_('interested in (unit type)'),
+    )
     # Project/Unit models are not present in the codebase yet.
     # Store their IDs as optional integers to match the ERD intent.
     project_id = models.PositiveBigIntegerField(_('project id'), blank=True, null=True)

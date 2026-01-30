@@ -27,7 +27,7 @@ Authorization is enforced through **role-based permissions**.
 * Can view all public content
 * Can submit inquiries **only when logged in**
 * Cannot access dashboard pages
-* Role can be upgraded only by **Manager or Superadmin**
+* Role can be upgraded only by **Manager or Superuser**
 
 ---
 
@@ -80,7 +80,7 @@ Authorization is enforced through **role-based permissions**.
 
 ### Manager
 
-* Has full system access, equivalent to Superadmin
+* Has full system access, equivalent to Superuser
 * Can:
 
   * Create, edit, delete all resources
@@ -90,7 +90,7 @@ Authorization is enforced through **role-based permissions**.
 
 ---
 
-### Superadmin
+### Superuser
 
 * Full system access without restrictions
 * Can:
@@ -119,7 +119,7 @@ Authorization is enforced through **role-based permissions**.
   * Action performed
   * Target resource
   * Timestamp
-* **Superadmin actions are not tracked**
+* **Superuser actions are not tracked**
 
 ---
 

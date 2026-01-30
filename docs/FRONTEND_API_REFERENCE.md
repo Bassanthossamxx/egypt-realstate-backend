@@ -324,7 +324,7 @@ Roles (string values):
 - `content_creator`
 - `staff`
 - `manager`
-- `superadmin`
+- `superuser`
 
 Core permission rules implemented in `apps/core/permissions.py`.
 
@@ -368,8 +368,8 @@ Several core resources include an `image` field.
 
 **Permissions**
 - Public: `GET` (list/retrieve)
-- Staff/Manager/Superadmin: `POST`, `PUT`, `PATCH`
-- Manager/Superadmin: `DELETE`
+- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
+- Manager/Superuser: `DELETE`
 
 **Fields**
 
@@ -414,8 +414,8 @@ Fields:
 
 **Permissions**
 - Public: `GET` (list/retrieve)
-- Staff/Manager/Superadmin: `POST`, `PUT`, `PATCH`
-- Manager/Superadmin: `DELETE`
+- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
+- Manager/Superuser: `DELETE`
 
 **Fields**
 
@@ -467,8 +467,8 @@ Fields:
 
 **Permissions**
 - Public: `GET` (list/retrieve)
-- Staff/Manager/Superadmin: `POST`, `PUT`, `PATCH`
-- Manager/Superadmin: `DELETE`
+- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
+- Manager/Superuser: `DELETE`
 
 **Fields**
 
@@ -507,8 +507,8 @@ Read-only:
 
 **Permissions**
 - Public: `GET` (list/retrieve)
-- Staff/Manager/Superadmin: `POST`, `PUT`, `PATCH`
-- Manager/Superadmin: `DELETE`
+- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
+- Manager/Superuser: `DELETE`
 
 **Fields**
 
@@ -545,8 +545,8 @@ Fields:
 
 **Permissions**
 - Public: `GET` (list/retrieve)
-- Staff/Manager/Superadmin: `POST`, `PUT`, `PATCH`
-- Manager/Superadmin: `DELETE`
+- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
+- Manager/Superuser: `DELETE`
 
 **Fields**
 
@@ -575,8 +575,8 @@ Read-only:
 
 **Permissions**
 - Public: `GET` (list/retrieve)
-- Content Creator / Staff / Manager / Superadmin: `POST`, `PUT`, `PATCH`
-- Content Creator / Manager / Superadmin: `DELETE`
+- Content Creator / Manager / Superuser: `POST`, `PUT`, `PATCH`
+- Content Creator / Manager / Superuser: `DELETE`
 
 **Fields**
 
@@ -626,8 +626,8 @@ Fields:
 ## Permission quick matrix (core)
 
 - **Public (no token)**: list/retrieve for all core resources
-- **Staff/Manager/Superadmin**: create/update for Countries, Cities, Sliders, Ads, Features
-- **Manager/Superadmin**: delete for Countries, Cities, Sliders, Ads, Features
+- **Staff/Manager/Superuser**: create/update for Countries, Cities, Sliders, Ads, Features
+- **Manager/Superuser**: delete for Countries, Cities, Sliders, Ads, Features
 - **Articles**:
-  - create/update: Content Creator OR Staff OR Manager OR Superadmin
-  - delete: Content Creator OR Manager OR Superadmin
+  - create/update: Content Creator OR Manager OR Superuser
+  - delete: Content Creator OR Manager OR Superuser
