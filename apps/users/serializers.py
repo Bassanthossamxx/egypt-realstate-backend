@@ -154,9 +154,10 @@ class CustomerInquirySerializer(serializers.ModelSerializer):
             'interested_in_name_ar',
             'project_id',
             'unit_id',
+            'is_contacted',
             'created_at',
         ]
-        read_only_fields = ['id', 'customer_id', 'created_at']
+        read_only_fields = ['id', 'customer_id', 'created_at', 'is_contacted']
 
     def validate(self, attrs):
         if not attrs.get('interested_in'):
@@ -179,3 +180,9 @@ class CustomerInquirySerializer(serializers.ModelSerializer):
             customer = request.user
 
         return CustomerInquiry.objects.create(customer=customer, **validated_data)
+
+
+class CustomerInquiryContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerInquiry
+        fields = ['is_contacted']

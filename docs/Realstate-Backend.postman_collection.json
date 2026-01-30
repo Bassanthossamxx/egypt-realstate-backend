@@ -1,0 +1,1032 @@
+{
+  "info": {
+    "_postman_id": "b62f1b9c-7f3d-4f0e-9b12-6ef9e0a44b35",
+    "name": "Realstate Backend API (Website/App + Dashboard)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Complete Postman collection for the current backend endpoints.\n\nVariables:\n- {{baseurl}} default: http://127.0.0.1:8000\n- {{accessToken}}: JWT access token\n- {{refreshToken}}: JWT refresh token\n- IDs: {{countryId}}, {{cityId}}, {{sliderId}}, {{adId}}, {{featureId}}, {{articleId}}, {{unitTypeId}}, {{inquiryId}}\n\nAuth: For protected endpoints, set Authorization: Bearer {{accessToken}}\nSwagger: {{baseurl}}/ (UI), {{baseurl}}/api/schema/ (OpenAPI)"
+  },
+  "item": [
+    {
+      "name": "Meta (Swagger + Schema)",
+      "description": "Convenience requests to open Swagger UI and fetch OpenAPI schema.",
+      "item": [
+        {
+          "name": "Swagger UI (GET /)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/",
+              "host": ["{{baseurl}}"],
+              "path": [""]
+            },
+            "description": "Open Swagger UI in browser (no auth required)."
+          },
+          "response": []
+        },
+        {
+          "name": "OpenAPI Schema (GET /api/schema/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/schema/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "schema", ""]
+            },
+            "description": "Fetch drf-spectacular OpenAPI schema (no auth required)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth (shared)",
+      "description": "Authentication endpoints used by Website/App and Dashboard.",
+      "item": [
+        {
+          "name": "Register (POST /api/auth/register/)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"201234567890\",\n  \"password\": \"StrongPassword123!\",\n  \"password_confirm\": \"StrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/auth/register/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "auth", "register", ""]
+            },
+            "description": "Create a new customer account (role defaults to customer)."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {},
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"User registered successfully\",\n  \"refresh\": \"<refresh_token>\",\n  \"access\": \"<access_token>\",\n  \"access_expires_at\": \"2026-01-31T12:00:00+00:00\",\n  \"refresh_expires_at\": \"2026-03-01T12:00:00+00:00\",\n  \"access_expires_in\": 86400,\n  \"refresh_expires_in\": 2592000,\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"user@example.com\",\n    \"full_name\": \"John Doe\",\n    \"phone\": \"201234567890\",\n    \"role\": \"customer\",\n    \"profile_image\": null,\n    \"is_active\": true,\n    \"created_at\": \"2026-01-31T11:00:00Z\",\n    \"updated_at\": \"2026-01-31T11:00:00Z\"\n  }\n}"
+            },
+            {
+              "name": "400 Validation error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"email\": [\"A user with this email already exists.\"]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login (POST /api/auth/login/)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"StrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/auth/login/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "auth", "login", ""]
+            },
+            "description": "Login and receive access + refresh tokens. Save tokens into {{accessToken}} and {{refreshToken}} manually or via tests."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"refresh\": \"<refresh_token>\",\n  \"access\": \"<access_token>\",\n  \"access_expires_at\": \"2026-01-31T12:00:00+00:00\",\n  \"refresh_expires_at\": \"2026-03-01T12:00:00+00:00\",\n  \"access_expires_in\": 86400,\n  \"refresh_expires_in\": 2592000,\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"user@example.com\",\n    \"full_name\": \"John Doe\",\n    \"role\": \"customer\",\n    \"phone\": \"+201234567890\",\n    \"profile_image\": null\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"detail\": \"No active account found with the given credentials\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh token (POST /api/auth/refresh/)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/auth/refresh/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "auth", "refresh", ""]
+            },
+            "description": "Exchange refresh token for a new access token (and possibly a rotated refresh token)."
+          },
+          "response": [
+            {
+              "name": "200 OK (rotation may return refresh)",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"access\": \"<new_access_token>\",\n  \"refresh\": \"<new_refresh_token>\"\n}"
+            },
+            {
+              "name": "401 Token not valid",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"detail\": \"Token is invalid or expired\",\n  \"code\": \"token_not_valid\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout (POST /api/auth/logout/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/auth/logout/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "auth", "logout", ""]
+            },
+            "description": "Blacklist the refresh token (requires a valid access token)."
+          },
+          "response": [
+            {
+              "name": "205 Reset Content",
+              "originalRequest": {},
+              "status": "Reset Content",
+              "code": 205,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Successfully logged out\"\n}"
+            },
+            {
+              "name": "400 Missing refresh",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Refresh token is required\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Me (GET /api/auth/me/)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/auth/me/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "auth", "me", ""]
+            },
+            "description": "Get current user profile (any authenticated user)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"email\": \"user@example.com\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"+201234567890\",\n  \"role\": \"customer\",\n  \"profile_image\": null,\n  \"is_active\": true,\n  \"created_at\": \"2026-01-31T11:00:00Z\",\n  \"updated_at\": \"2026-01-31T11:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Me (PATCH /api/auth/me/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Doe Updated\",\n  \"phone\": \"+201000000000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/auth/me/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "auth", "me", ""]
+            },
+            "description": "Update current user profile fields (any authenticated user)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"email\": \"user@example.com\",\n  \"full_name\": \"John Doe Updated\",\n  \"phone\": \"+201000000000\",\n  \"role\": \"customer\",\n  \"profile_image\": null,\n  \"is_active\": true,\n  \"created_at\": \"2026-01-31T11:00:00Z\",\n  \"updated_at\": \"2026-01-31T11:05:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Website/App (public reads)",
+      "description": "Public endpoints for website/app (no auth).",
+      "item": [
+        {
+          "name": "Countries - List (GET /api/countries/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/countries/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "countries", ""]
+            },
+            "description": "Public list of countries."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[{\n  \"id\": 1,\n  \"name_en\": \"Egypt\",\n  \"name_ar\": \"مصر\",\n  \"image\": \"/media/countries/egypt.webp\",\n  \"appear_on_home_page\": true,\n  \"created_at\": \"2026-01-31T11:00:00Z\"\n}]"
+            }
+          ]
+        },
+        {
+          "name": "Countries - Retrieve (GET /api/countries/{{countryId}}/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/countries/{{countryId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "countries", "{{countryId}}", ""]
+            },
+            "description": "Public country details."
+          },
+          "response": []
+        },
+        {
+          "name": "Cities - List (GET /api/cities/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/cities/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "cities", ""]
+            },
+            "description": "Public list of cities."
+          },
+          "response": []
+        },
+        {
+          "name": "Cities - Retrieve (GET /api/cities/{{cityId}}/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/cities/{{cityId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "cities", "{{cityId}}", ""]
+            },
+            "description": "Public city details."
+          },
+          "response": []
+        },
+        {
+          "name": "Sliders - List (GET /api/sliders/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/sliders/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "sliders", ""]
+            },
+            "description": "Public list of home page sliders (ordered by index)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ads - List (GET /api/ads/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/ads/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "ads", ""]
+            },
+            "description": "Public list of ads."
+          },
+          "response": []
+        },
+        {
+          "name": "Features - List (GET /api/features/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/features/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "features", ""]
+            },
+            "description": "Public list of features."
+          },
+          "response": []
+        },
+        {
+          "name": "Articles - List (GET /api/articles/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/articles/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "articles", ""]
+            },
+            "description": "Public list of articles."
+          },
+          "response": []
+        },
+        {
+          "name": "Articles - Retrieve (GET /api/articles/{{articleId}}/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/articles/{{articleId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "articles", "{{articleId}}", ""]
+            },
+            "description": "Public article details."
+          },
+          "response": []
+        },
+        {
+          "name": "Unit Types - List (GET /api/unit/types/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/unit/types/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "unit", "types", ""]
+            },
+            "description": "Public list of UnitType choices."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Website/App (customer)",
+      "description": "Customer-only endpoints (requires role=customer).",
+      "item": [
+        {
+          "name": "Create Customer Inquiry (POST /api/customer/inqury/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+201234567890\",\n  \"message\": \"I want more details\",\n  \"interested_in\": {{unitTypeId}},\n  \"project_id\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/customer/inqury/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "customer", "inqury", ""]
+            },
+            "description": "Create an inquiry. Customer cannot set customer_id or is_contacted. Must provide project_id and/or unit_id."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {},
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 5,\n  \"customer_id\": 1,\n  \"phone\": \"+201234567890\",\n  \"message\": \"I want more details\",\n  \"interested_in\": 1,\n  \"interested_in_name_en\": \"Apartment\",\n  \"interested_in_name_ar\": \"شقة\",\n  \"project_id\": 10,\n  \"unit_id\": null,\n  \"is_contacted\": false,\n  \"created_at\": \"2026-01-31T10:15:30Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request (missing project_id/unit_id)",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"non_field_errors\": [\"Provide project_id and/or unit_id.\"]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dashboard (staff/manager/superuser)",
+      "description": "Management endpoints for staff/manager/superuser (and where noted, manager/superuser only for deletes).",
+      "item": [
+        {
+          "name": "Countries - Create (POST /api/countries/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name_en", "value": "Egypt", "type": "text" },
+                { "key": "name_ar", "value": "مصر", "type": "text" },
+                { "key": "appear_on_home_page", "value": "true", "type": "text" },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/countries/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "countries", ""]
+            },
+            "description": "Create a country (staff/manager/superuser). Image is required."
+          },
+          "response": []
+        },
+        {
+          "name": "Countries - Update (PATCH /api/countries/{{countryId}}/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name_en", "value": "Egypt Updated", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/countries/{{countryId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "countries", "{{countryId}}", ""]
+            },
+            "description": "Update a country (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Countries - Delete (DELETE /api/countries/{{countryId}}/)",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/countries/{{countryId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "countries", "{{countryId}}", ""]
+            },
+            "description": "Delete a country (manager/superuser only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Cities - Create (POST /api/cities/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "country", "value": "{{countryId}}", "type": "text" },
+                { "key": "name_en", "value": "Cairo", "type": "text" },
+                { "key": "name_ar", "value": "القاهرة", "type": "text" },
+                { "key": "appear_on_home_page", "value": "true", "type": "text" },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/cities/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "cities", ""]
+            },
+            "description": "Create a city (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Cities - Update (PATCH /api/cities/{{cityId}}/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name_en", "value": "Cairo Updated", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/cities/{{cityId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "cities", "{{cityId}}", ""]
+            },
+            "description": "Update a city (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Cities - Delete (DELETE /api/cities/{{cityId}}/)",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/cities/{{cityId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "cities", "{{cityId}}", ""]
+            },
+            "description": "Delete a city (manager/superuser only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Sliders - Create (POST /api/sliders/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": [] },
+                { "key": "appear_on_home_page", "value": "true", "type": "text" },
+                { "key": "index", "value": "0", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/sliders/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "sliders", ""]
+            },
+            "description": "Create a slider (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Sliders - Update (PATCH /api/sliders/{{sliderId}}/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "index", "value": "1", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/sliders/{{sliderId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "sliders", "{{sliderId}}", ""]
+            },
+            "description": "Update a slider (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Sliders - Delete (DELETE /api/sliders/{{sliderId}}/)",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/sliders/{{sliderId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "sliders", "{{sliderId}}", ""]
+            },
+            "description": "Delete a slider (manager/superuser only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ads - Create (POST /api/ads/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "appear_place", "value": "home", "type": "text" },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/ads/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "ads", ""]
+            },
+            "description": "Create an ad (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ads - Update (PATCH /api/ads/{{adId}}/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "appear_place", "value": "projects", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/ads/{{adId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "ads", "{{adId}}", ""]
+            },
+            "description": "Update an ad (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ads - Delete (DELETE /api/ads/{{adId}}/)",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/ads/{{adId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "ads", "{{adId}}", ""]
+            },
+            "description": "Delete an ad (manager/superuser only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Features - Create (POST /api/features/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_en\": \"Swimming Pool\",\n  \"name_ar\": \"حمام سباحة\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/features/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "features", ""]
+            },
+            "description": "Create a feature (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Features - Update (PATCH /api/features/{{featureId}}/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_en\": \"Swimming Pool Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/features/{{featureId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "features", "{{featureId}}", ""]
+            },
+            "description": "Update a feature (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Features - Delete (DELETE /api/features/{{featureId}}/)",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/features/{{featureId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "features", "{{featureId}}", ""]
+            },
+            "description": "Delete a feature (manager/superuser only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Unit Types - Create (POST /api/unit/types/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_en\": \"Townhouse\",\n  \"name_ar\": \"تاون هاوس\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/unit/types/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "unit", "types", ""]
+            },
+            "description": "Create a unit type (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Unit Types - Update (PATCH /api/unit/types/{{unitTypeId}}/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_en\": \"Townhouse Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/unit/types/{{unitTypeId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "unit", "types", "{{unitTypeId}}", ""]
+            },
+            "description": "Update a unit type (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Unit Types - Delete (DELETE /api/unit/types/{{unitTypeId}}/)",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/unit/types/{{unitTypeId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "unit", "types", "{{unitTypeId}}", ""]
+            },
+            "description": "Delete a unit type (manager/superuser only)."
+          },
+          "response": []
+        },
+        {
+          "name": "List Customer Inquiries (GET /api/customer/inqury/)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/customer/inqury/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "customer", "inqury", ""]
+            },
+            "description": "List all customer inquiries (staff/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Inquiry Contacted (PATCH /api/customer/inqury/{{inquiryId}}/contacted/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_contacted\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/customer/inqury/{{inquiryId}}/contacted/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "customer", "inqury", "{{inquiryId}}", "contacted", ""]
+            },
+            "description": "Update only is_contacted (staff/manager/superuser)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"is_contacted\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dashboard (content creator / manager / superuser) - Articles write",
+      "description": "Article create/update/delete is allowed for content_creator OR manager OR superuser.",
+      "item": [
+        {
+          "name": "Articles - Create (POST /api/articles/)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title_en", "value": "Market Update", "type": "text" },
+                { "key": "title_ar", "value": "تحديث السوق", "type": "text" },
+                { "key": "content_en_md", "value": "# Heading\n\nMarkdown...", "type": "text" },
+                { "key": "content_ar_md", "value": "# عنوان\n\nMarkdown...", "type": "text" },
+                { "key": "meta", "value": "{\"tags\":[\"news\"],\"reading_time\":5}", "type": "text" },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/articles/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "articles", ""]
+            },
+            "description": "Create an article (content_creator/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Articles - Update (PATCH /api/articles/{{articleId}}/)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title_en", "value": "Market Update Updated", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseurl}}/api/articles/{{articleId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "articles", "{{articleId}}", ""]
+            },
+            "description": "Update an article (content_creator/manager/superuser)."
+          },
+          "response": []
+        },
+        {
+          "name": "Articles - Delete (DELETE /api/articles/{{articleId}}/)",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseurl}}/api/articles/{{articleId}}/",
+              "host": ["{{baseurl}}"],
+              "path": ["api", "articles", "{{articleId}}", ""]
+            },
+            "description": "Delete an article (content_creator/manager/superuser)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    { "key": "baseurl", "value": "http://127.0.0.1:8000", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "countryId", "value": "1", "type": "string" },
+    { "key": "cityId", "value": "1", "type": "string" },
+    { "key": "sliderId", "value": "1", "type": "string" },
+    { "key": "adId", "value": "1", "type": "string" },
+    { "key": "featureId", "value": "1", "type": "string" },
+    { "key": "articleId", "value": "1", "type": "string" },
+    { "key": "unitTypeId", "value": "1", "type": "string" },
+    { "key": "inquiryId", "value": "1", "type": "string" }
+  ]
+}

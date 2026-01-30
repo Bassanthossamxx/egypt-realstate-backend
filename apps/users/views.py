@@ -10,6 +10,7 @@ from .serializers import (
     RegisterSerializer,
     CustomTokenObtainPairSerializer,
     CustomerInquirySerializer,
+    CustomerInquiryContactSerializer,
     token_expiry_info,
 )
 from .models import User, CustomerInquiry
@@ -111,4 +112,13 @@ class CustomerInquiryListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
+
+
+class CustomerInquiryContactUpdateView(generics.UpdateAPIView):
+    queryset = CustomerInquiry.objects.all()
+    serializer_class = CustomerInquiryContactSerializer
+    http_method_names = ['patch', 'options', 'head']
+
+    def get_permissions(self):
+        return [IsStaffOrHigher()]
 

@@ -131,6 +131,8 @@ class CustomerInquiry(models.Model):
     project_id = models.PositiveBigIntegerField(_('project id'), blank=True, null=True)
     unit_id = models.PositiveBigIntegerField(_('unit id'), blank=True, null=True)
 
+    is_contacted = models.BooleanField(_('is contacted'), default=False)
+
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
 
     class Meta:

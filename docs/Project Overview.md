@@ -93,6 +93,10 @@ Login/register tokens include additional claims:
 - `POST /api/customer/inqury/` — customer only
   - creates an inquiry for the authenticated customer
 
+- `PATCH /api/customer/inqury/{id}/contacted/` — staff/manager/superuser
+  - request body: `{ "is_contacted": true|false }`
+  - updates only the `is_contacted` flag
+
 Note: the path is spelled `inqury` in code.
 
 
