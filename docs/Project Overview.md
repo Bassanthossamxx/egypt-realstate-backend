@@ -17,7 +17,9 @@ This is a quick “get back up to speed” document for the current Django/DRF b
 - Django admin: `/admin/`
 - Auth APIs: `/api/auth/` (users app)
 - Customer APIs: `/api/customer/` (users app)
+- Dashboard APIs: `/api/dashboard/` (users app)
 - Core APIs: `/api/` (core app, DRF router)
+- Developers APIs: `/api/developers/` (developers app)
 
 Notes:
 - Endpoints use trailing slashes.
@@ -60,9 +62,21 @@ Login/register tokens include additional claims:
 
 ### Developers / Units / Projects apps (status)
 
-- `apps.developers.models.Developer` exists (not exposed via API routes yet).
+- `apps.developers.models.Developer` exists and is exposed via API:
+  - public list/retrieve: `GET /api/developers/`, `GET /api/developers/{id}/`
+  - dashboard write: `POST/PUT/PATCH` for `staff|manager|superuser`
+  - delete: `DELETE` for `manager|superuser` (demotes linked users to `customer`)
 - `apps.units.models.UnitType` exists (not exposed via API routes yet).
 - `apps.projects.models` is currently empty.
+
+### Dashboard Users
+
+- Users management endpoints exist for dashboard:
+  - `GET|POST /api/dashboard/users/`
+  - `GET|PATCH|DELETE /api/dashboard/users/{id}/`
+- Permissions: manager/superuser only.
+- If `role=developer`, the user must be linked to a valid developer.
+- List/retrieve responses include developer details when linked: `developer_id`, `developer_name_en`, `developer_name_ar`, `developer_logo` (absolute URL).
 
 ## Endpoints (complete list from current URL config)
 

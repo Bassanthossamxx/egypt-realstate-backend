@@ -28,6 +28,7 @@ Some endpoints are shared (e.g., `/api/auth/login/`, `/api/auth/me/`) because bo
 - Public lists/details: `GET /api/countries/`, `GET /api/cities/`, `GET /api/sliders/`, `GET /api/ads/`, `GET /api/features/`, `GET /api/articles/`
 - Unit Types (public): `GET /api/unit/types/`, `GET /api/unit/types/{id}/`
 - Customer Inquiry: `POST /api/customer/inqury/`
+- Developers (public): `GET /api/developers/`, `GET /api/developers/{id}/`
 
 ### Dashboard
 
@@ -39,6 +40,12 @@ Some endpoints are shared (e.g., `/api/auth/login/`, `/api/auth/me/`) because bo
 - Customer Inquiries:
   - `GET /api/customer/inqury/` (list all)
   - `PATCH /api/customer/inqury/{id}/contacted/` (toggle follow-up status)
+- Developers management:
+  - `POST /api/developers/`, `PUT|PATCH /api/developers/{id}/` for `staff|manager|superuser`
+  - `DELETE /api/developers/{id}/` for `manager|superuser`
+- Users management (dashboard):
+  - `GET|POST /api/dashboard/users/`
+  - `GET|PATCH|DELETE /api/dashboard/users/{id}/`
 
 ## Authentication
 
@@ -400,6 +407,173 @@ Supported (current):
 - Unit Types: `name_en`, `name_ar`
 - Articles: `title_en`, `title_ar`
 - Developers: `name_en`, `name_ar`
+- Dashboard Users (list): (optional future) not enabled
+
+---
+
+## Developers
+
+- Resource: `/api/developers/`
+
+**Endpoints**
+
+- `GET /api/developers/` (list)
+- `GET /api/developers/{id}/` (retrieve)
+- `POST /api/developers/` (create)
+- `PUT /api/developers/{id}/` (update)
+- `PATCH /api/developers/{id}/` (partial update)
+- `DELETE /api/developers/{id}/` (delete)
+
+**Permissions**
+
+- Public: `GET` (list/retrieve)
+- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
+- Manager/Superuser: `DELETE`
+
+**Search**
+
+- `GET /api/developers/?search=cai`
+- Searches in `name_en` and `name_ar`.
+
+**Fields**
+
+Required on create:
+- `name_en` (string)
+- `name_ar` (string)
+- `description_en` (string)
+- `description_ar` (string)
+- `logo` (file upload)
+
+Optional:
+- `website_url` (string; http(s)://, www., or schemeless)
+
+Read-only:
+- `id`
+- `created_at`, `updated_at`
+
+**Create example (multipart/form-data)**
+
+Fields:
+- `name_en`: `Acme Developments`
+- `name_ar`: `اكمي`
+- `description_en`: `Developer description...`
+- `description_ar`: `...`
+- `website_url`: `https://example.com`
+- `logo`: (file)
+
+**Delete behavior**
+
+When a developer is deleted:
+- any users linked to that developer will have:
+  - `role` changed to `customer`
+  - `developer` cleared (set to null)
+
+---
+
+## Dashboard Users (management)
+
+- Resource: `/api/dashboard/users/`
+
+**Endpoints**
+
+- `GET /api/dashboard/users/` (list)
+- `POST /api/dashboard/users/` (create)
+- `GET /api/dashboard/users/{id}/` (retrieve)
+- `PATCH /api/dashboard/users/{id}/` (partial update)
+- `DELETE /api/dashboard/users/{id}/` (delete)
+
+**Permissions**
+
+- Manager/Superuser: all methods
+
+**Response fields (list/retrieve)**
+
+Along with basic user fields, the dashboard users API includes developer details when a user is linked to a developer:
+
+- `developer_id` (number | null)
+- `developer_name_en` (string | null)
+- `developer_name_ar` (string | null)
+- `developer_logo` (string URL | null; absolute URL)
+
+**Create (JSON or multipart/form-data)**
+
+Required:
+- `email`
+- `full_name`
+- `role` (one of: `customer`, `developer`, `content_creator`, `staff`, `manager`, `superuser`)
+- `password`
+- `password_confirm`
+
+Optional:
+- `phone`
+- `is_active` (boolean)
+- `profile_image` (file)
+- `developer_id` (required only if `role=developer`)
+
+**Role rules**
+
+- If `role=developer`, you must provide `developer_id`.
+- If `role != developer`, `developer_id` will be ignored/cleared.
+
+**Create example (JSON)**
+
+```json
+{
+  "email": "dev.user@example.com",
+  "full_name": "Dev User",
+  "role": "developer",
+  "developer_id": 3,
+  "password": "StrongPassword123!",
+  "password_confirm": "StrongPassword123!"
+}
+```
+
+**Update (PATCH) allowed fields**
+
+- `full_name`
+- `phone`
+- `role`
+- `developer_id` (only meaningful if role is `developer`)
+- `profile_image`
+- `is_active`
+
+Optional password change:
+- `new_password`
+- `new_password_confirm`
+
+**PATCH example (disable login)**
+
+```json
+{
+  "is_active": false
+}
+```
+
+**List response example (developer user)**
+
+```json
+[
+  {
+    "id": 12,
+    "email": "dev.user@example.com",
+    "full_name": "Dev User",
+    "phone": null,
+    "role": "developer",
+    "developer_id": 3,
+    "developer_name_en": "Acme Developments",
+    "developer_name_ar": "اكمي",
+    "developer_logo": "{{baseurl}}/media/developers/logos/acme.png",
+    "profile_image": "{{baseurl}}/media/users/profiles/u12.webp",
+    "is_active": true,
+    "created_at": "2026-01-31T10:15:30Z",
+    "updated_at": "2026-01-31T10:15:30Z"
+  }
+]
+```
+
+**Image URL format**
+
+- `logo` is returned as an absolute URL (e.g. `{{baseurl}}/media/...`) when request context is available.
 
 #### Uploading `image` fields
 

@@ -22,10 +22,14 @@ urlpatterns = [
     path("api/auth/", include("apps.users.urls")),
     # Customer
     path("api/customer/", include("apps.users.customer_urls")),
+    # Dashboard (manager/superuser)
+    path("api/dashboard/", include("apps.users.dashboard_urls")),
     # Core API
     path("api/", include("apps.core.urls")),
     # Units API
     path("api/", include("apps.units.urls")),
+    # Developers API
+    path("api/", include("apps.developers.urls")),
     # Swagger
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

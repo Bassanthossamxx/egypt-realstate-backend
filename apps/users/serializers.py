@@ -8,6 +8,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import User, CustomerInquiry
 from apps.units.models import UnitType
+from apps.core.choices import UserRoles
+from apps.developers.models import Developer
 
 
 def token_expiry_info(refresh: RefreshToken) -> dict:
@@ -200,3 +202,162 @@ class CustomerInquiryContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerInquiry
         fields = ['is_contacted']
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    developer_id = serializers.IntegerField(source='developer.id', read_only=True)
+    developer_name_en = serializers.CharField(source='developer.name_en', read_only=True)
+    developer_name_ar = serializers.CharField(source='developer.name_ar', read_only=True)
+    developer_logo = serializers.ImageField(source='developer.logo', read_only=True)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = getattr(self, 'context', {}).get('request')
+        if request:
+            if isinstance(data.get('profile_image'), str) and data['profile_image'].startswith('/'):
+                data['profile_image'] = request.build_absolute_uri(data['profile_image'])
+            if isinstance(data.get('developer_logo'), str) and data['developer_logo'].startswith('/'):
+                data['developer_logo'] = request.build_absolute_uri(data['developer_logo'])
+        return data
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'email',
+            'full_name',
+            'phone',
+            'role',
+            'developer_id',
+            'developer_name_en',
+            'developer_name_ar',
+            'developer_logo',
+            'profile_image',
+            'is_active',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    password_confirm = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    developer_id = serializers.PrimaryKeyRelatedField(
+        source='developer',
+        queryset=Developer.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'email',
+            'full_name',
+            'phone',
+            'role',
+            'developer_id',
+            'profile_image',
+            'is_active',
+            'password',
+            'password_confirm',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_email(self, value):
+        value = value.lower()
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError('A user with this email already exists.')
+        return value
+
+    def validate(self, attrs):
+        if attrs.get('password') != attrs.get('password_confirm'):
+            raise serializers.ValidationError({'password': "Password fields didn't match."})
+
+        try:
+            validate_password(attrs['password'])
+        except ValidationError as e:
+            raise serializers.ValidationError({'password': list(e.messages)})
+
+        role = attrs.get('role')
+        developer = attrs.get('developer')
+        if role == UserRoles.DEVELOPER and developer is None:
+            raise serializers.ValidationError({'developer_id': 'Developer is required when role is developer.'})
+        if role != UserRoles.DEVELOPER:
+            attrs['developer'] = None
+
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('password_confirm', None)
+        password = validated_data.pop('password')
+        user = User.objects.create_user(password=password, **validated_data)
+        return user
+
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    developer_id = serializers.PrimaryKeyRelatedField(
+        source='developer',
+        queryset=Developer.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    new_password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
+    new_password_confirm = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
+
+    class Meta:
+        model = User
+        fields = [
+            'full_name',
+            'phone',
+            'role',
+            'developer_id',
+            'profile_image',
+            'is_active',
+            'new_password',
+            'new_password_confirm',
+        ]
+
+    def validate(self, attrs):
+        new_password = attrs.get('new_password')
+        new_password_confirm = attrs.get('new_password_confirm')
+
+        if (new_password and not new_password_confirm) or (new_password_confirm and not new_password):
+            raise serializers.ValidationError({'new_password': 'Provide new_password and new_password_confirm.'})
+
+        if new_password:
+            if new_password != new_password_confirm:
+                raise serializers.ValidationError({'new_password': "Password fields didn't match."})
+            try:
+                validate_password(new_password)
+            except ValidationError as e:
+                raise serializers.ValidationError({'new_password': list(e.messages)})
+
+        # Role/developer relationship enforcement
+        role = attrs.get('role', getattr(self.instance, 'role', None))
+        developer = attrs.get('developer', getattr(self.instance, 'developer', None))
+
+        if role == UserRoles.DEVELOPER and developer is None:
+            raise serializers.ValidationError({'developer_id': 'Developer is required when role is developer.'})
+
+        if role != UserRoles.DEVELOPER:
+            attrs['developer'] = None
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        new_password = validated_data.pop('new_password', None)
+        validated_data.pop('new_password_confirm', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if new_password:
+            instance.set_password(new_password)
+
+        instance.save()
+        return instance

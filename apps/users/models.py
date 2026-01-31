@@ -52,6 +52,15 @@ class User(AbstractUser):
         choices=UserRoles.choices,
         default=UserRoles.CUSTOMER
     ) #required
+
+    developer = models.ForeignKey(
+        'developers.Developer',
+        on_delete=models.SET_NULL,
+        related_name='users',
+        blank=True,
+        null=True,
+        verbose_name=_('developer'),
+    )
     profile_image = models.ImageField(
         _('profile image'),
         upload_to='users/profiles/',

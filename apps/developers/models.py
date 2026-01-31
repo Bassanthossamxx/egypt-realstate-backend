@@ -12,8 +12,10 @@ from apps.core.validation import (
 class Developer(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="developer_profile"
+        on_delete=models.SET_NULL,
+        related_name="developer_profile",
+        null=True,
+        blank=True,
     )
 
     name_en = models.CharField(max_length=255, validators=[validate_english_text])
