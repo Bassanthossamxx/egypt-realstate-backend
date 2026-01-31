@@ -140,6 +140,19 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATIC_URL = 'static/'
+
+# Media (served from DB storage)
+MEDIA_URL = "/media/"
+
+# Django 4.2+ storage configuration (Django 6 uses this).
+STORAGES = {
+    "default": {
+        "BACKEND": "apps.core.storage.DatabaseStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 # swagger settings
 SPECTACULAR_SETTINGS = {
     "TITLE": "Real Estate Egypt Backend API",

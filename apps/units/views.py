@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 
 from apps.core.permissions import IsStaff, IsManager, IsSuperuser, IsManagerOrSuperadmin
@@ -9,6 +10,8 @@ from .serializers import UnitTypeSerializer
 class UnitTypeViewSet(viewsets.ModelViewSet):
 	queryset = UnitType.objects.all().order_by('id')
 	serializer_class = UnitTypeSerializer
+	filter_backends = [SearchFilter]
+	search_fields = ['name_en', 'name_ar']
 
 	def get_permissions(self):
 		if self.action in ['list', 'retrieve']:

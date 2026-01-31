@@ -15,11 +15,11 @@ def token_expiry_info(refresh: RefreshToken) -> dict:
     now = timezone.now()
 
     refresh_exp = int(refresh["exp"])
-    refresh_expires_at = datetime.fromtimestamp(refresh_exp, tz=timezone.utc)
+    refresh_expires_at = datetime.fromtimestamp(refresh_exp, tz=timezone.UTC)
 
     access = refresh.access_token
     access_exp = int(access["exp"])
-    access_expires_at = datetime.fromtimestamp(access_exp, tz=timezone.utc)
+    access_expires_at = datetime.fromtimestamp(access_exp, tz=timezone.UTC)
 
     return {
         "access_expires_at": access_expires_at.isoformat(),
@@ -30,6 +30,13 @@ def token_expiry_info(refresh: RefreshToken) -> dict:
 
 
 class UserSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = getattr(self, "context", {}).get("request")
+        if request and isinstance(data.get("profile_image"), str) and data["profile_image"].startswith("/"):
+            data["profile_image"] = request.build_absolute_uri(data["profile_image"])
+        return data
+
     class Meta:
         model = User
         fields = [
@@ -121,13 +128,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data.update(expiry)
 
         # Add user data to response
+        request = self.context.get('request')
+
+        profile_image_url = None
+        if self.user.profile_image:
+            raw_url = self.user.profile_image.url
+            profile_image_url = request.build_absolute_uri(raw_url) if request else raw_url
+
         data['user'] = {
             'id': self.user.id,
             'email': self.user.email,
             'full_name': self.user.full_name,
             'role': self.user.role,
             'phone': self.user.phone,
-            'profile_image': self.user.profile_image.url if self.user.profile_image else None,
+            'profile_image': profile_image_url,
         }
 
         return data

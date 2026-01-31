@@ -5,6 +5,8 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from apps.core.media_views import db_media_serve
+
 
 def _superuser_only_admin_has_permission(request):
     return request.user.is_active and request.user.is_superuser
@@ -13,6 +15,8 @@ def _superuser_only_admin_has_permission(request):
 admin.site.has_permission = _superuser_only_admin_has_permission
 
 urlpatterns = [
+    # DB-backed media files
+    path("media/<path:path>", db_media_serve, name="db-media"),
     path("admin/", admin.site.urls),
     # Authentication
     path("api/auth/", include("apps.users.urls")),

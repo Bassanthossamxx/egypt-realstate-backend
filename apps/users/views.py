@@ -35,7 +35,7 @@ class RegisterView(generics.CreateAPIView):
         
         return Response({
             'message': 'User registered successfully',
-            'user': UserSerializer(user).data,
+            'user': UserSerializer(user, context={'request': request}).data,
             'refresh': str(refresh),
             'access': str(refresh.access_token),
             **expiry,

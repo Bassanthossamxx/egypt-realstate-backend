@@ -8,6 +8,8 @@ from django.core.validators import FileExtensionValidator
 from django.core.validators import URLValidator
 from django.utils.translation import gettext_lazy as _
 
+from PIL import Image, UnidentifiedImageError
+
 # --- Character class helpers ---
 _LATIN_LETTER_RE = re.compile(r"[A-Za-z]")
 # Broad Arabic blocks (letters + presentation forms).
@@ -135,3 +137,52 @@ validate_image_webp_only = FileExtensionValidator(
     allowed_extensions=["webp"],
     message=_("Only .webp images are allowed."),
 )
+
+
+def _validate_image_is_real_image(file_obj, *, allow_formats: list[str] | None = None) -> None:
+    if file_obj is None:
+        return
+
+    # UploadedFile supports .seek/.tell.
+    try:
+        current_pos = file_obj.tell()
+    except Exception:
+        current_pos = None
+
+    try:
+        if current_pos is not None:
+            file_obj.seek(0)
+
+        img = Image.open(file_obj)
+        fmt = (img.format or "").upper()
+        img.verify()  # verifies file is not broken
+
+        if allow_formats is not None:
+            allowed = {f.upper() for f in allow_formats}
+            if fmt not in allowed:
+                raise ValidationError(
+                    _(f"Only {', '.join(sorted(allowed))} images are allowed.")
+                )
+    except UnidentifiedImageError:
+        raise ValidationError(_("Upload a valid image file."))
+    except ValidationError:
+        raise
+    except Exception:
+        # Avoid leaking internals; surface as validation error.
+        raise ValidationError(_("Upload a valid image file."))
+    finally:
+        try:
+            if current_pos is not None:
+                file_obj.seek(current_pos)
+        except Exception:
+            pass
+
+
+def validate_image_is_image(value) -> None:
+    """Validate that the upload is a real image (any Pillow-supported format)."""
+    _validate_image_is_real_image(value)
+
+
+def validate_image_is_webp(value) -> None:
+    """Validate that the upload is a real WebP image (content check)."""
+    _validate_image_is_real_image(value, allow_formats=["WEBP"])

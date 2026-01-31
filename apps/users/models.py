@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.choices import UserRoles
 from apps.core.validation import (
     validate_phone_number,
+    validate_image_is_image,
 )
 
 
@@ -56,6 +57,7 @@ class User(AbstractUser):
         upload_to='users/profiles/',
         blank=True,
         null=True,
+        validators=[validate_image_is_image],
     ) #optional
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True)

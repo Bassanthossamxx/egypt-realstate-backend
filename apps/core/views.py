@@ -2,6 +2,7 @@
 ViewSets for core models with role-based permissions.
 """
 from rest_framework import viewsets
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 
 from .models import Country, City, Slider, Ad, Feature, Article
@@ -22,6 +23,18 @@ from .permissions import (
 )
 
 
+def _parse_bool_query(value: str | None) -> bool | None:
+    if value is None:
+        return None
+
+    value = value.strip().lower()
+    if value in {"true", "1", "yes", "y", "t"}:
+        return True
+    if value in {"false", "0", "no", "n", "f"}:
+        return False
+    return None
+
+
 
 class CountryViewSet(viewsets.ModelViewSet):
     """
@@ -34,6 +47,22 @@ class CountryViewSet(viewsets.ModelViewSet):
     """
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name_en", "name_ar"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if getattr(self, "action", None) == "list":
+            raw = self.request.query_params.get("appear_on_home_page")
+            if raw is None:
+                return qs.filter(appear_on_home_page=True)
+            if raw.strip().lower() == "all":
+                return qs
+            parsed = _parse_bool_query(raw)
+            if parsed is None:
+                return qs.filter(appear_on_home_page=True)
+            return qs.filter(appear_on_home_page=parsed)
+        return qs
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -57,6 +86,22 @@ class CityViewSet(viewsets.ModelViewSet):
     """
     queryset = City.objects.all()
     serializer_class = CitySerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name_en", "name_ar"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if getattr(self, "action", None) == "list":
+            raw = self.request.query_params.get("appear_on_home_page")
+            if raw is None:
+                return qs.filter(appear_on_home_page=True)
+            if raw.strip().lower() == "all":
+                return qs
+            parsed = _parse_bool_query(raw)
+            if parsed is None:
+                return qs.filter(appear_on_home_page=True)
+            return qs.filter(appear_on_home_page=parsed)
+        return qs
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -78,8 +123,22 @@ class SliderViewSet(viewsets.ModelViewSet):
     - Staff can create and edit (POST, PUT, PATCH)
     - Manager and Superuser can delete (DELETE)
     """
-    queryset = Slider.objects.all().order_by('index')
+    queryset = Slider.objects.all().order_by('index', 'id')
     serializer_class = SliderSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if getattr(self, "action", None) == "list":
+            raw = self.request.query_params.get("appear_on_home_page")
+            if raw is None:
+                return qs.filter(appear_on_home_page=True)
+            if raw.strip().lower() == "all":
+                return qs
+            parsed = _parse_bool_query(raw)
+            if parsed is None:
+                return qs.filter(appear_on_home_page=True)
+            return qs.filter(appear_on_home_page=parsed)
+        return qs
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -125,6 +184,8 @@ class FeatureViewSet(viewsets.ModelViewSet):
     """
     queryset = Feature.objects.all()
     serializer_class = FeatureSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name_en", "name_ar"]
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -147,6 +208,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
     """
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["title_en", "title_ar"]
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

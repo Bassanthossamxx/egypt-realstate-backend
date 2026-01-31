@@ -3,6 +3,7 @@
 This document is written for frontend developers to integrate with the current backend endpoints.
 
 - Base URL (local): `http://127.0.0.1:8000`
+- In examples, `{{baseurl}}` means the same base URL (e.g. `http://127.0.0.1:8000`).
 - Swagger UI: `/`
 - OpenAPI schema: `/api/schema/`
 - All endpoints below include a trailing slash.
@@ -183,7 +184,7 @@ Required:
     "full_name": "John Doe",
     "role": "customer",
     "phone": "+201234567890",
-    "profile_image": null
+    "profile_image": "{{baseurl}}/media/users/profiles/profile.webp"
   }
 }
 ```
@@ -317,7 +318,7 @@ Required:
   "full_name": "John Doe",
   "phone": "+201234567890",
   "role": "customer",
-  "profile_image": null,
+  "profile_image": "{{baseurl}}/media/users/profiles/profile.webp",
   "is_active": true,
   "created_at": "2025-12-25T12:34:56Z",
   "updated_at": "2025-12-25T12:35:10Z"
@@ -384,6 +385,22 @@ Core permission rules implemented in `apps/core/permissions.py`.
 - **403 Forbidden**: authenticated but insufficient role
 - **404 Not Found**: invalid `{id}`
 
+#### Search (text)
+
+Many list endpoints support a `search` query param:
+
+- Example: `GET /api/countries/?search=cai`
+- Searches in `name_en` / `name_ar` or `title_en` / `title_ar` depending on the resource.
+
+Supported (current):
+
+- Countries: `name_en`, `name_ar`
+- Cities: `name_en`, `name_ar`
+- Features: `name_en`, `name_ar`
+- Unit Types: `name_en`, `name_ar`
+- Articles: `title_en`, `title_ar`
+- Developers: `name_en`, `name_ar`
+
 #### Uploading `image` fields
 
 Several core resources include an `image` field.
@@ -393,8 +410,16 @@ Several core resources include an `image` field.
 
 **Allowed image formats (server validation)**
 
-- WebP only: Countries, Cities, Articles, and any other like units , projects ,...
-- Multiple formats allowed: Sliders, Ads, Developer `logo` (jpg/jpeg/png/webp)
+- WebP only: all image uploads by default (Countries, Cities, Ads, Articles, etc.)
+- Exceptions (any real image format): Sliders, Developer `logo`, User `profile_image`
+
+**Image URL format in responses**
+
+- API responses return a full (absolute) URL for file/image fields (including user `profile_image`) when request context is available (typical in DRF views), e.g. `{{baseurl}}/media/...`.
+
+**Where files are stored**
+
+- Uploaded files are stored in the database (DB-backed storage) and served via `GET /media/<path>`.
 
 ---
 
@@ -464,6 +489,14 @@ Read-only:
 
 - Resource: `/api/countries/`
 
+**List filtering**
+
+- Default: `GET /api/countries/` returns only `appear_on_home_page=true`.
+- Options:
+  - `GET /api/countries/?appear_on_home_page=true`
+  - `GET /api/countries/?appear_on_home_page=false` #for dashboard or all
+  - `GET /api/countries/?appear_on_home_page=all` (returns all)
+
 **Endpoints**
 
 - `GET /api/countries/` (list)
@@ -507,7 +540,7 @@ Fields:
   "id": 1,
   "name_en": "Egypt",
   "name_ar": "مصر",
-  "image": "/media/countries/egypt.png",
+  "image": "{{baseurl}}/media/countries/egypt.png",
   "appear_on_home_page": true,
   "created_at": "2025-12-25T12:34:56Z"
 }
@@ -518,6 +551,14 @@ Fields:
 ## Cities
 
 - Resource: `/api/cities/`
+
+**List filtering**
+
+- Default: `GET /api/cities/` returns only `appear_on_home_page=true`.
+- Options:
+  - `GET /api/cities/?appear_on_home_page=true`
+  - `GET /api/cities/?appear_on_home_page=false`
+  - `GET /api/cities/?appear_on_home_page=all` (returns all)
 
 **Endpoints**
 
@@ -568,7 +609,7 @@ Fields:
   "country_name": "Egypt",
   "name_en": "Cairo",
   "name_ar": "القاهرة",
-  "image": "/media/cities/cairo.png",
+  "image": "{{baseurl}}/media/cities/cairo.png",
   "appear_on_home_page": true,
   "created_at": "2025-12-25T12:34:56Z",
   "updated_at": "2025-12-25T12:34:56Z"
@@ -580,6 +621,14 @@ Fields:
 ## Sliders
 
 - Resource: `/api/sliders/`
+
+**List filtering**
+
+- Default: `GET /api/sliders/` returns only `appear_on_home_page=true`.
+- Options:
+  - `GET /api/sliders/?appear_on_home_page=true`
+  - `GET /api/sliders/?appear_on_home_page=false`
+  - `GET /api/sliders/?appear_on_home_page=all` (returns all)
 
 **Endpoints**
 
@@ -613,7 +662,7 @@ Read-only:
 ```json
 {
   "id": 1,
-  "image": "/media/sliders/slide1.jpg",
+  "image": "{{baseurl}}/media/sliders/slide1.jpg",
   "appear_on_home_page": true,
   "index": 0,
   "created_at": "2025-12-25T12:34:56Z"
@@ -665,7 +714,7 @@ Fields:
 ```json
 {
   "id": 1,
-  "image": "/media/ads/ad1.jpg",
+  "image": "{{baseurl}}/media/ads/ad1.jpg",
   "appear_place": "home",
   "created_at": "2025-12-25T12:34:56Z"
 }
@@ -767,7 +816,7 @@ Fields:
   "content_en_md": "# Heading\n\nMarkdown...",
   "content_ar_md": "# عنوان\n\nMarkdown...",
   "meta": {"tags": ["news"], "reading_time": 5},
-  "image": "/media/articles/article1.jpg",
+  "image": "{{baseurl}}/media/articles/article1.jpg",
   "created_at": "2025-12-25T12:34:56Z",
   "updated_at": "2025-12-25T12:34:56Z"
 }

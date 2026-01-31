@@ -5,7 +5,7 @@ from apps.core.validation import (
     validate_arabic_text,
     validate_english_text,
     validate_http_https_url,
-    validate_image_extension,
+    validate_image_is_image,
 )
 
 
@@ -22,7 +22,7 @@ class Developer(models.Model):
     description_en = models.TextField(blank=False,null=False, validators=[validate_english_text])
     description_ar = models.TextField(blank=False ,null=False, validators=[validate_arabic_text])
 
-    logo = models.ImageField(upload_to="developers/logos/", validators=[validate_image_extension])
+    logo = models.ImageField(upload_to="developers/logos/", validators=[validate_image_is_image])
     website_url = models.CharField(max_length=500, blank=True, validators=[validate_http_https_url])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
