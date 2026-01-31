@@ -1,0 +1,33 @@
+.git
+.gitignore
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.venv/
+venv/
+.env
+
+*.sqlite3
+
+# local/editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+
+# tests/cache
+.pytest_cache/
+.coverage
+
+# media dumps (your storage is DB-backed, but keep local artifacts out)
+media/

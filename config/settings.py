@@ -159,6 +159,18 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API documentation for the Real Estate Egypt Backend sample and easy to use.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    # Make Swagger easier to scan.
+    "SORT_OPERATIONS": True,
+    "SORT_OPERATION_PARAMETERS": True,
+    # Control tag order + descriptions.
+    "TAGS": [
+        {"name": "Auth", "description": "Authentication and current-user profile endpoints."},
+        {"name": "Customer", "description": "Customer-facing endpoints (customer role) and inquiry workflows."},
+        {"name": "Dashboard Users", "description": "Dashboard user management (manager/superuser only)."},
+        {"name": "Developers", "description": "Developers resource (public read + dashboard write/delete rules)."},
+        {"name": "Core", "description": "Core content resources: countries, cities, sliders, ads, features, articles."},
+        {"name": "Units", "description": "Unit types and unit-related resources."},
+    ],
     "CONTACT": {
         "name": "bassanthossamxx",
     },

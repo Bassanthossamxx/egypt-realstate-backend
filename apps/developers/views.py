@@ -2,6 +2,7 @@ from django.db import transaction
 from rest_framework import generics
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.core.choices import UserRoles
 from apps.core.permissions import IsManagerOrSuperadmin, IsStaffOrHigher
@@ -11,6 +12,10 @@ from .models import Developer
 from .serializers import DeveloperSerializer
 
 
+@extend_schema_view(
+	get=extend_schema(tags=['Developers'], summary='List developers (public)'),
+	post=extend_schema(tags=['Developers'], summary='Create developer (staff+)'),
+)
 class DeveloperListCreateView(generics.ListCreateAPIView):
 	"""List (public) + create (staff+) developers.
 
@@ -29,6 +34,12 @@ class DeveloperListCreateView(generics.ListCreateAPIView):
 		return [IsStaffOrHigher()]
 
 
+@extend_schema_view(
+	get=extend_schema(tags=['Developers'], summary='Retrieve developer (public)'),
+	put=extend_schema(tags=['Developers'], summary='Update developer (staff+)'),
+	patch=extend_schema(tags=['Developers'], summary='Partially update developer (staff+)'),
+	delete=extend_schema(tags=['Developers'], summary='Delete developer (manager+)'),
+)
 class DeveloperRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 	"""Retrieve (public) + update (staff+) + delete (manager+) developer."""
 

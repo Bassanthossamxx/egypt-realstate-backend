@@ -115,3 +115,58 @@ Notes:
 - `DATABASE_URL` must be a valid PostgreSQL URL.
 - `DEBUG` and `CORS_ALLOW_ALL_ORIGINS` are read as strings (`True`/`False`).
 - `ALLOWED_HOSTS` is split by commas.
+
+## Docker
+
+### Production (DigitalOcean)
+
+The Dockerfile is production-oriented (Gunicorn, dependency caching).
+
+Build:
+
+```powershell
+docker build -t realstate-backend .
+```
+
+Run (local):
+
+```powershell
+docker run --rm -p 8000:8000 `
+	-e DATABASE_URL="postgres://postgres:postgres@host.docker.internal:5432/realstate_db" `
+	-e SECRET_KEY="change-me" `
+	-e DEBUG="False" `
+	-e ALLOWED_HOSTS="127.0.0.1,localhost" `
+	-e CORS_ALLOW_ALL_ORIGINS="True" `
+	realstate-backend
+```
+
+DigitalOcean notes:
+
+- Ensure `DATABASE_URL` is set (settings require it at startup).
+- App Platform sets `PORT` automatically; the container binds to it.
+- Run migrations as a separate step (release command / one-off run): `python manage.py migrate`.
+
+DigitalOcean environment variables checklist:
+
+- Required:
+	- `DATABASE_URL`
+	- `SECRET_KEY`
+- Recommended:
+	- `DEBUG=False`
+	- `ALLOWED_HOSTS` (comma-separated, include your domain)
+	- `CORS_ALLOW_ALL_ORIGINS=False` (use explicit allowlist if needed)
+- Optional (Gunicorn tuning):
+	- `WEB_CONCURRENCY` (defaults to 4)
+	- `GUNICORN_TIMEOUT` (defaults to 120)
+
+Note about `.env`:
+
+- Locally, `python-dotenv` loads variables from a `.env` file.
+- In production, you should set variables in DigitalOcean (do not commit `.env`).
+- `.env` is ignored by `.dockerignore`, so it will not be copied into the image.
+
+### Local development (docker-compose)
+
+```powershell
+docker compose up --build
+```

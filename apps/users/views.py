@@ -4,6 +4,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.core.permissions import IsCustomer, IsStaffOrHigher
 from .serializers import (
     UserSerializer,
@@ -42,6 +43,11 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+RegisterView = extend_schema_view(
+    post=extend_schema(tags=['Auth'], summary='Register (public)'),
+)(RegisterView)
+
+
 class LoginView(TokenObtainPairView):
     """
     Login with email and password.
@@ -49,6 +55,11 @@ class LoginView(TokenObtainPairView):
     """
     serializer_class = CustomTokenObtainPairSerializer
     permission_classes = [AllowAny]
+
+
+LoginView = extend_schema_view(
+    post=extend_schema(tags=['Auth'], summary='Login (public)'),
+)(LoginView)
 
 
 class LogoutView(APIView):
@@ -79,6 +90,11 @@ class LogoutView(APIView):
             )
 
 
+LogoutView = extend_schema_view(
+    post=extend_schema(tags=['Auth'], summary='Logout (blacklist refresh token)'),
+)(LogoutView)
+
+
 class MeView(generics.RetrieveUpdateAPIView):
     """
     Get or update current user profile.
@@ -99,6 +115,13 @@ class MeView(generics.RetrieveUpdateAPIView):
         return super().put(request, *args, **kwargs)
 
 
+MeView = extend_schema_view(
+    get=extend_schema(tags=['Auth'], summary='Get current user (me)'),
+    patch=extend_schema(tags=['Auth'], summary='Update current user (me)'),
+    put=extend_schema(tags=['Auth'], summary='Update current user (me) - full'),
+)(MeView)
+
+
 class CustomerInquiryListCreateView(generics.ListCreateAPIView):
     queryset = CustomerInquiry.objects.select_related('customer').all()
     serializer_class = CustomerInquirySerializer
@@ -114,6 +137,12 @@ class CustomerInquiryListCreateView(generics.ListCreateAPIView):
         serializer.save(customer=self.request.user)
 
 
+CustomerInquiryListCreateView = extend_schema_view(
+    get=extend_schema(tags=['Customer'], summary='List customer inquiries (staff+)'),
+    post=extend_schema(tags=['Customer'], summary='Create inquiry (customer)'),
+)(CustomerInquiryListCreateView)
+
+
 class CustomerInquiryContactUpdateView(generics.UpdateAPIView):
     queryset = CustomerInquiry.objects.all()
     serializer_class = CustomerInquiryContactSerializer
@@ -121,4 +150,9 @@ class CustomerInquiryContactUpdateView(generics.UpdateAPIView):
 
     def get_permissions(self):
         return [IsStaffOrHigher()]
+
+
+CustomerInquiryContactUpdateView = extend_schema_view(
+    patch=extend_schema(tags=['Customer'], summary='Mark inquiry contacted (staff+)'),
+)(CustomerInquiryContactUpdateView)
 

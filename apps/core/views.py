@@ -4,6 +4,7 @@ ViewSets for core models with role-based permissions.
 from rest_framework import viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from .models import Country, City, Slider, Ad, Feature, Article
 from .serializers import (
@@ -74,6 +75,16 @@ class CountryViewSet(viewsets.ModelViewSet):
         return [AllowAny()]
 
 
+CountryViewSet = extend_schema_view(
+    list=extend_schema(tags=['Core'], summary='List countries (public)'),
+    retrieve=extend_schema(tags=['Core'], summary='Retrieve country (public)'),
+    create=extend_schema(tags=['Core'], summary='Create country (staff+)'),
+    update=extend_schema(tags=['Core'], summary='Update country (staff+)'),
+    partial_update=extend_schema(tags=['Core'], summary='Partially update country (staff+)'),
+    destroy=extend_schema(tags=['Core'], summary='Delete country (manager+)'),
+)(CountryViewSet)
+
+
 
 class CityViewSet(viewsets.ModelViewSet):
     """
@@ -113,6 +124,16 @@ class CityViewSet(viewsets.ModelViewSet):
         return [AllowAny()]
 
 
+CityViewSet = extend_schema_view(
+    list=extend_schema(tags=['Core'], summary='List cities (public)'),
+    retrieve=extend_schema(tags=['Core'], summary='Retrieve city (public)'),
+    create=extend_schema(tags=['Core'], summary='Create city (staff+)'),
+    update=extend_schema(tags=['Core'], summary='Update city (staff+)'),
+    partial_update=extend_schema(tags=['Core'], summary='Partially update city (staff+)'),
+    destroy=extend_schema(tags=['Core'], summary='Delete city (manager+)'),
+)(CityViewSet)
+
+
 
 class SliderViewSet(viewsets.ModelViewSet):
     """
@@ -150,6 +171,16 @@ class SliderViewSet(viewsets.ModelViewSet):
         return [AllowAny()]
 
 
+SliderViewSet = extend_schema_view(
+    list=extend_schema(tags=['Core'], summary='List sliders (public)'),
+    retrieve=extend_schema(tags=['Core'], summary='Retrieve slider (public)'),
+    create=extend_schema(tags=['Core'], summary='Create slider (staff+)'),
+    update=extend_schema(tags=['Core'], summary='Update slider (staff+)'),
+    partial_update=extend_schema(tags=['Core'], summary='Partially update slider (staff+)'),
+    destroy=extend_schema(tags=['Core'], summary='Delete slider (manager+)'),
+)(SliderViewSet)
+
+
 
 class AdViewSet(viewsets.ModelViewSet):
     """
@@ -171,6 +202,16 @@ class AdViewSet(viewsets.ModelViewSet):
         elif self.action == 'destroy':
             return [IsManagerOrSuperadmin()]
         return [AllowAny()]
+
+
+AdViewSet = extend_schema_view(
+    list=extend_schema(tags=['Core'], summary='List ads (public)'),
+    retrieve=extend_schema(tags=['Core'], summary='Retrieve ad (public)'),
+    create=extend_schema(tags=['Core'], summary='Create ad (staff+)'),
+    update=extend_schema(tags=['Core'], summary='Update ad (staff+)'),
+    partial_update=extend_schema(tags=['Core'], summary='Partially update ad (staff+)'),
+    destroy=extend_schema(tags=['Core'], summary='Delete ad (manager+)'),
+)(AdViewSet)
 
 
 class FeatureViewSet(viewsets.ModelViewSet):
@@ -197,6 +238,16 @@ class FeatureViewSet(viewsets.ModelViewSet):
         return [AllowAny()]
 
 
+FeatureViewSet = extend_schema_view(
+    list=extend_schema(tags=['Core'], summary='List features (public)'),
+    retrieve=extend_schema(tags=['Core'], summary='Retrieve feature (public)'),
+    create=extend_schema(tags=['Core'], summary='Create feature (staff+)'),
+    update=extend_schema(tags=['Core'], summary='Update feature (staff+)'),
+    partial_update=extend_schema(tags=['Core'], summary='Partially update feature (staff+)'),
+    destroy=extend_schema(tags=['Core'], summary='Delete feature (manager+)'),
+)(FeatureViewSet)
+
+
 
 class ArticleViewSet(viewsets.ModelViewSet):
     """
@@ -219,3 +270,13 @@ class ArticleViewSet(viewsets.ModelViewSet):
         elif self.action == 'destroy':
             return [(IsContentCreator | IsManager | IsSuperuser)()]
         return [AllowAny()]
+
+
+ArticleViewSet = extend_schema_view(
+    list=extend_schema(tags=['Core'], summary='List articles (public)'),
+    retrieve=extend_schema(tags=['Core'], summary='Retrieve article (public)'),
+    create=extend_schema(tags=['Core'], summary='Create article (content_creator/manager/superuser)'),
+    update=extend_schema(tags=['Core'], summary='Update article (content_creator/manager/superuser)'),
+    partial_update=extend_schema(tags=['Core'], summary='Partially update article (content_creator/manager/superuser)'),
+    destroy=extend_schema(tags=['Core'], summary='Delete article (content_creator/manager/superuser)'),
+)(ArticleViewSet)

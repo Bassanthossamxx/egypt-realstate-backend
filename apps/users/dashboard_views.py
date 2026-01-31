@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.core.permissions import IsManagerOrSuperadmin
 
@@ -28,3 +29,13 @@ class DashboardUserViewSet(viewsets.ModelViewSet):
         if self.action in ['update', 'partial_update']:
             return AdminUserUpdateSerializer
         return AdminUserSerializer
+
+
+DashboardUserViewSet = extend_schema_view(
+    list=extend_schema(tags=['Dashboard Users'], summary='List users (manager/superuser)'),
+    retrieve=extend_schema(tags=['Dashboard Users'], summary='Retrieve user (manager/superuser)'),
+    create=extend_schema(tags=['Dashboard Users'], summary='Create user (manager/superuser)'),
+    update=extend_schema(tags=['Dashboard Users'], summary='Update user (manager/superuser)'),
+    partial_update=extend_schema(tags=['Dashboard Users'], summary='Partially update user (manager/superuser)'),
+    destroy=extend_schema(tags=['Dashboard Users'], summary='Delete user (manager/superuser)'),
+)(DashboardUserViewSet)
