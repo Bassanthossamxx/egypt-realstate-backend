@@ -1,8 +1,10 @@
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.db.models import Q
 
 from apps.core.permissions import IsManagerOrSuperadmin
+from apps.core.choices import UserRoles
 
 from .models import User
 from .serializers import AdminUserCreateSerializer, AdminUserSerializer, AdminUserUpdateSerializer
@@ -22,6 +24,22 @@ class DashboardUserViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
             return [IsManagerOrSuperadmin()]
         return [AllowAny()]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        
+        # Superusers can see all users
+        if user.is_superuser or user.role == UserRoles.SUPERUSER:
+            return queryset
+        
+        # Managers can only see users with roles from manager and below (exclude superusers)
+        if user.role == UserRoles.MANAGER:
+            return queryset.exclude(
+                Q(role=UserRoles.SUPERUSER) | Q(is_superuser=True)
+            )
+        
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'create':
