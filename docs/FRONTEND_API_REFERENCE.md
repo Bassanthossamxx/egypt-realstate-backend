@@ -1,263 +1,239 @@
-# Frontend API Reference (Website/App + Dashboard)
+# Frontend API Reference - Complete Guide
 
-This document is written for frontend developers to integrate with the current backend endpoints.
+> **Comprehensive API documentation for Egypt Real Estate Platform**  
+---
 
-- Base URL (local): `http://127.0.0.1:8000`
-- In examples, `{{baseurl}}` means the same base URL (e.g. `http://127.0.0.1:8000`).
-- Swagger UI: `/`
-- OpenAPI schema: `/api/schema/`
-- All endpoints below include a trailing slash.
+## Table of Contents
 
-## Website/App vs Dashboard (how to read this doc)
-
-We separate endpoints by the **frontend consumer**:
-
-- **Website/App**: public endpoints (`AllowAny`) + customer endpoints (role `customer`).
-- **Dashboard**: any endpoint that requires role `staff`, `manager`, `superuser`, and **Articles write** endpoints for role `content_creator`.
-
-Some endpoints are shared (e.g., `/api/auth/login/`, `/api/auth/me/`) because both website/app users and dashboard users must authenticate.
+1. [Overview](#overview)
+2. [Authentication & Authorization](#authentication--authorization)
+3. [Website/App Endpoints (Public & Customer)](#websiteapp-endpoints)
+4. [Dashboard Endpoints (Staff & Management)](#dashboard-endpoints)
+5. [User Roles & Permissions Matrix](#user-roles--permissions-matrix)
+6. [Common Patterns & Best Practices](#common-patterns--best-practices)
 
 ---
 
-## Quick index (by frontend consumer)
+## Overview
 
-### Website/App
+### Base URLs
+- **Production**: Your DigitalOcean App Platform URL
+- **Swagger UI**: `/` (interactive API documentation)
+- **OpenAPI Schema**: `/api/schema/`
 
-- Auth (public): `POST /api/auth/register/`, `POST /api/auth/login/`, `POST /api/auth/refresh/`
-- Auth (customer): `GET|PATCH|PUT /api/auth/me/`, `POST /api/auth/logout/`
-- Public lists/details: `GET /api/countries/`, `GET /api/cities/`, `GET /api/sliders/`, `GET /api/ads/`, `GET /api/features/`, `GET /api/articles/`
-- Unit Types (public): `GET /api/unit/types/`, `GET /api/unit/types/{id}/`
-- Customer Inquiry: `POST /api/customer/inqury/`
-- Developers (public): `GET /api/developers/`, `GET /api/developers/{id}/`
+### Important Conventions
+- All endpoints use trailing slashes (`/`)
+- All media URLs returned as absolute URLs
+- All timestamps in ISO 8601 format (UTC)
+- Use `multipart/form-data` for file uploads
+- Use `application/json` for JSON data
 
-### Dashboard
-
-- Auth (dashboard users): `POST /api/auth/login/`, `POST /api/auth/refresh/`, `GET|PATCH|PUT /api/auth/me/`, `POST /api/auth/logout/`
-- Core management:
-  - Countries/Cities/Sliders/Ads/Features: write for `staff|manager|superuser`, delete for `manager|superuser`
-  - Articles: write/delete for `content_creator|manager|superuser`
-- Unit Types management: write for `staff|manager|superuser`, delete for `manager|superuser`
-- Customer Inquiries:
-  - `GET /api/customer/inqury/` (list all)
-  - `PATCH /api/customer/inqury/{id}/contacted/` (toggle follow-up status)
-- Developers management:
-  - `POST /api/developers/`, `PUT|PATCH /api/developers/{id}/` for `staff|manager|superuser`
-  - `DELETE /api/developers/{id}/` for `manager|superuser`
-- Users management (dashboard):
-  - `GET|POST /api/dashboard/users/`
-  - `GET|PATCH|DELETE /api/dashboard/users/{id}/`
-
-## Authentication
-
-### JWT header
-
-For protected endpoints, send:
-
-- `Authorization: Bearer <access_token>`
-
-**Swagger tip**
-
-In Swagger (`/`), click **Authorize** and paste: `Bearer <access_token>`.
-
-### Tokens
-
-- `access`: short-lived JWT access token
-- `refresh`: long-lived refresh token
-
-Token claims also include `user_id`, `email`, `role`, `full_name`.
+### Response Codes
+| Code | Meaning |
+|------|---------|
+| `200 OK` | Successful request |
+| `201 Created` | Resource created successfully |
+| `204 No Content` | Resource deleted successfully |
+| `400 Bad Request` | Validation error or malformed request |
+| `401 Unauthorized` | Authentication required or token invalid |
+| `403 Forbidden` | Insufficient permissions |
+| `404 Not Found` | Resource not found |
+| `500 Internal Server Error` | Server error |
 
 ---
 
-## Auth endpoints (`/api/auth/`)
+## Authentication & Authorization
 
-### Register
+### User Roles
 
-- **POST** `/api/auth/register/`
-- **Auth**: No
-- **Creates**: User with role `customer` by default
-- **Content-Type**: `application/json` (or `multipart/form-data` if uploading `profile_image`)
+| Role | Description | Primary Use Case |
+|------|-------------|------------------|
+| `customer` | Regular website/app users | Browse listings, submit inquiries |
+| `developer` | Property developers "PORTAL" | Manage their projects and units |
+| `content_creator` | Content managers | Create and manage articles |
+| `staff` | Staff members | Dashboard CRUD operations (no delete) |
+| `manager` | Managers | Full dashboard access (cannot see superusers) |
+| `superuser` | System administrators "Our Team" | Complete system access |
 
-**Request body fields**
+### JWT Authentication
 
-Required:
-- `email` (string, unique)
-- `full_name` (string)
-- `password` (string)
-- `password_confirm` (string; must match `password`)
+#### Header Format
+```
+Authorization: Bearer <access_token>
+```
 
-Optional:
-- `phone` (string; digits with optional leading `+`; can be null)
-- `profile_image` (file upload)
+#### Token Lifecycle
+- **Access Token**: 24 hours (short-lived)
+- **Refresh Token**: 30 days (long-lived)
+- **Token Claims**: `user_id`, `email`, `role`, `full_name`
 
-**Example (JSON)**
+---
+
+## Website/App Endpoints
+
+Public-facing endpoints for website and mobile app users.
+
+---
+
+### Authentication (`/api/auth/`)
+
+#### Register User
+
+Create a new customer account.
+
+**Endpoint**: `POST /api/auth/register/`  
+**Authentication**: None (Public)  
+**Role**: Assigns `customer` role automatically
+
+**Request Body** (`application/json` or `multipart/form-data`)
+
+| Field | Type | Required | Constraints |
+|-------|------|----------|-------------|
+| `email` | string |  Yes | Unique, valid email format |
+| `full_name` | string |  Yes | Max 255 characters |
+| `password` | string |  Yes | Min 8 characters |
+| `password_confirm` | string | Yes | Must match `password` |
+| `phone` | string | Optional | Digits with optional `+` prefix |
+| `profile_image` | file | Optional | Image file |
+
+**Example Request**
 
 ```json
 {
-  "email": "user@example.com",
+  "email": "customer@example.com",
   "full_name": "John Doe",
-  "phone": "201234567890",
-  "password": "StrongPassword123!",
-  "password_confirm": "StrongPassword123!"
+  "phone": "+201234567890",
+  "password": "SecurePass123!",
+  "password_confirm": "SecurePass123!"
 }
 ```
 
-**Success response**
-
-- **201 Created**
+**Success Response** `201 Created`
 
 ```json
 {
   "message": "User registered successfully",
-  "refresh": "<refresh_token>",
-  "access": "<access_token>",
-  "access_expires_at": "2025-12-29T15:00:00+00:00",
-  "refresh_expires_at": "2026-01-28T15:00:00+00:00",
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGci...",
+  "access": "eyJ0eXAiOiJKV1QiLCJhbGci...",
+  "access_expires_at": "2026-02-04T14:00:00+00:00",
+  "refresh_expires_at": "2026-03-05T14:00:00+00:00",
   "access_expires_in": 86400,
   "refresh_expires_in": 2592000,
   "user": {
     "id": 1,
-    "email": "user@example.com",
+    "email": "customer@example.com",
     "full_name": "John Doe",
-    "phone": "201234567890",
+    "phone": "+201234567890",
     "role": "customer",
     "profile_image": null,
     "is_active": true,
-    "created_at": "2025-12-25T12:34:56Z",
-    "updated_at": "2025-12-25T12:34:56Z"
+    "created_at": "2026-02-03T14:00:00Z",
+    "updated_at": "2026-02-03T14:00:00Z"
   }
 }
 ```
 
-**Common error responses**
-
-- **400 Bad Request** (validation)
+**Error Responses**
 
 ```json
-{
-  "email": ["A user with this email already exists."]
-}
-```
+// 400 - Email already exists
+{"email": ["A user with this email already exists."]}
 
-```json
-{
-  "password": ["Password fields didn't match."]
-}
-```
+// 400 - Password mismatch
+{"password": ["Password fields didn't match."]}
 
-```json
-{
-  "password": ["This password is too short. It must contain at least 8 characters."]
-}
+// 400 - Weak password
+{"password": ["This password is too short. It must contain at least 8 characters."]}
 ```
 
 ---
 
-### Login
+#### Login
 
-- **POST** `/api/auth/login/`
-- **Auth**: No
-- **Content-Type**: `application/json`
+Authenticate with email and password.
 
-**Request body fields**
+**Endpoint**: `POST /api/auth/login/`  
+**Authentication**: None (Public)
 
-Required:
-- `email` (string)
-- `password` (string)
+**Request Body**
 
-**Example**
+| Field | Type | Required |
+|-------|------|----------|
+| `email` | string |  Yes |
+| `password` | string |  Yes |
+
+**Example Request**
 
 ```json
 {
-  "email": "user@example.com",
-  "password": "StrongPassword123!"
+  "email": "customer@example.com",
+  "password": "SecurePass123!"
 }
 ```
 
-**Success response**
-
-- **200 OK**
+**Success Response** `200 OK`
 
 ```json
 {
-  "refresh": "<refresh_token>",
-  "access": "<access_token>",
-  "access_expires_at": "2025-12-29T15:00:00+00:00",
-  "refresh_expires_at": "2026-01-28T15:00:00+00:00",
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGci...",
+  "access": "eyJ0eXAiOiJKV1QiLCJhbGci...",
+  "access_expires_at": "2026-02-04T14:00:00+00:00",
+  "refresh_expires_at": "2026-03-05T14:00:00+00:00",
   "access_expires_in": 86400,
   "refresh_expires_in": 2592000,
   "user": {
     "id": 1,
-    "email": "user@example.com",
+    "email": "customer@example.com",
     "full_name": "John Doe",
     "role": "customer",
     "phone": "+201234567890",
-    "profile_image": "{{baseurl}}/media/users/profiles/profile.webp"
+    "profile_image": "http://127.0.0.1:8000/media/users/profiles/profile.jpg"
   }
 }
 ```
 
-**Token expiry fields**
-
-- `access_expires_at`, `refresh_expires_at`: ISO timestamps
-- `access_expires_in`, `refresh_expires_in`: seconds remaining (dynamic)
-
-**Common error responses**
-
-- **401 Unauthorized**
+**Error Response**
 
 ```json
-{
-  "detail": "No active account found with the given credentials"
-}
+// 401 - Invalid credentials
+{"detail": "No active account found with the given credentials"}
 ```
 
 ---
 
-### Refresh token
+#### Refresh Token
 
-- **POST** `/api/auth/refresh/`
-- **Auth**: No
-- **Content-Type**: `application/json`
+Get a new access token using refresh token.
 
-**Request body fields**
+**Endpoint**: `POST /api/auth/refresh/`  
+**Authentication**: None (Public)
 
-Required:
-- `refresh` (string)
+**Request Body**
 
-**Example**
+| Field | Type | Required |
+|-------|------|----------|
+| `refresh` | string |  Yes |
 
-```json
-{
-  "refresh": "<refresh_token>"
-}
-```
-
-**Success response**
-
-- **200 OK**
-
-With rotation enabled, the backend may return both a new access token and a new refresh token:
+**Example Request**
 
 ```json
 {
-  "access": "<new_access_token>",
-  "refresh": "<new_refresh_token>"
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGci..."
 }
 ```
 
-If rotation is disabled in the future, response may be:
+**Success Response** `200 OK`
 
 ```json
 {
-  "access": "<new_access_token>"
+  "access": "eyJ0eXAiOiJKV1QiLCJhbGci..."
 }
 ```
 
-**Common error responses**
-
-- **401 Unauthorized** (expired/invalid refresh token)
+**Error Response**
 
 ```json
+// 401 - Invalid or expired
 {
   "detail": "Token is invalid or expired",
   "code": "token_not_valid"
@@ -266,28 +242,86 @@ If rotation is disabled in the future, response may be:
 
 ---
 
-### Logout (blacklist refresh token)
+#### Get Current User Profile
 
-- **POST** `/api/auth/logout/`
-- **Auth**: Yes (access token required)
-- **Content-Type**: `application/json`
+Retrieve authenticated user's profile.
 
-**Request body fields**
+**Endpoint**: `GET /api/auth/me/`  
+**Authentication**: Required (Any authenticated user)
 
-Required:
-- `refresh` (string)
-
-**Example**
+**Success Response** `200 OK`
 
 ```json
 {
-  "refresh": "<refresh_token>"
+  "id": 1,
+  "email": "customer@example.com",
+  "full_name": "John Doe",
+  "phone": "+201234567890",
+  "role": "customer",
+  "profile_image": "http://127.0.0.1:8000/media/users/profiles/profile.jpg",
+  "is_active": true,
+  "created_at": "2026-02-03T14:00:00Z",
+  "updated_at": "2026-02-03T14:00:00Z"
 }
 ```
 
-**Success response**
+---
 
-- **205 Reset Content**
+#### Update Current User Profile
+
+Update authenticated user's profile.
+
+**Endpoints**:  
+- `PATCH /api/auth/me/` (partial update)  
+- `PUT /api/auth/me/` (full update)
+
+**Authentication**: Required (Any authenticated user)
+
+**Request Body** (All optional for PATCH)
+
+| Field | Type | Editable |
+|-------|------|----------|
+| `full_name` | string |  Yes |
+| `phone` | string | Yes |
+| `profile_image` | file |  Yes |
+| `email` | string | No (read-only) |
+| `role` | string |  No (read-only) |
+
+**Example Request**
+
+```json
+{
+  "full_name": "John Smith",
+  "phone": "+201234567899"
+}
+```
+
+**Success Response** `200 OK`
+
+---
+
+#### Logout
+
+Blacklist refresh token to logout.
+
+**Endpoint**: `POST /api/auth/logout/`  
+**Authentication**: Required
+
+**Request Body**
+
+| Field | Type | Required |
+|-------|------|----------|
+| `refresh` | string |  Yes |
+
+**Example Request**
+
+```json
+{
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGci..."
+}
+```
+
+**Success Response** `205 Reset Content`
 
 ```json
 {
@@ -295,486 +329,107 @@ Required:
 }
 ```
 
-**Common error responses**
-
-- **400 Bad Request** (missing/invalid refresh)
-
-```json
-{
-  "error": "Refresh token is required"
-}
-```
-
-- **401 Unauthorized** (missing/invalid access token)
-
 ---
 
-### Me (current user profile)
+### Countries (`/api/countries/`)
 
-- **GET** `/api/auth/me/` (retrieve)
-- **PATCH** `/api/auth/me/` (partial update)
-- **PUT** `/api/auth/me/` (full update)
-- **Auth**: Yes
+#### List Countries
 
-**Response fields**
+**Endpoint**: `GET /api/countries/`  
+**Authentication**: None (Public)
 
-```json
-{
-  "id": 1,
-  "email": "user@example.com",
-  "full_name": "John Doe",
-  "phone": "+201234567890",
-  "role": "customer",
-  "profile_image": "{{baseurl}}/media/users/profiles/profile.webp",
-  "is_active": true,
-  "created_at": "2025-12-25T12:34:56Z",
-  "updated_at": "2025-12-25T12:35:10Z"
-}
+**Query Parameters**
+
+| Parameter | Type | Default | Options |
+|-----------|------|---------|---------|
+| `appear_on_home_page` | string | `true` | `true`, `false`, `all` |
+| `search` | string | - | Search in `name_en` or `name_ar` |
+
+**Example Requests**
+
+```
+GET /api/countries/
+GET /api/countries/?appear_on_home_page=all
+GET /api/countries/?search=egypt
 ```
 
-**Updatable fields**
-
-- `email` (string)
-- `full_name` (string)
-- `phone` (string or null)
-- `profile_image` (file upload; use `multipart/form-data`)
-- `is_active` (boolean)
-
-Not updatable:
-- `role` (read-only)
-- `created_at`, `updated_at` (read-only)
-
-**PATCH example (JSON)**
-
-```json
-{
-  "full_name": "John Doe Updated",
-  "phone": "+201000000000"
-}
-```
-
-**Common error responses**
-
-- **401 Unauthorized** (missing/invalid token)
-
----
-
-## Authorization & roles (summary)
-
-Roles (string values):
-
-- `customer`
-- `developer`
-- `content_creator`
-- `staff`
-- `manager`
-- `superuser`
-
-Core permission rules implemented in `apps/core/permissions.py`.
-
----
-
-## Core API endpoints (`/api/`)
-
-
-#### Common responses
-
-- List: **200 OK** → JSON array of objects
-- Retrieve: **200 OK** → JSON object
-- Create: **201 Created** → created JSON object
-- Update (PUT/PATCH): **200 OK** → updated JSON object
-- Delete: **204 No Content**
-
-#### Common errors
-
-- **400 Bad Request**: serializer validation errors
-- **401 Unauthorized**: missing/invalid JWT on protected routes
-- **403 Forbidden**: authenticated but insufficient role
-- **404 Not Found**: invalid `{id}`
-
-#### Search (text)
-
-Many list endpoints support a `search` query param:
-
-- Example: `GET /api/countries/?search=cai`
-- Searches in `name_en` / `name_ar` or `title_en` / `title_ar` depending on the resource.
-
-Supported (current):
-
-- Countries: `name_en`, `name_ar`
-- Cities: `name_en`, `name_ar`
-- Features: `name_en`, `name_ar`
-- Unit Types: `name_en`, `name_ar`
-- Articles: `title_en`, `title_ar`
-- Developers: `name_en`, `name_ar`
-- Dashboard Users (list): (optional future) not enabled
-
----
-
-## Developers
-
-- Resource: `/api/developers/`
-
-**Endpoints**
-
-- `GET /api/developers/` (list)
-- `GET /api/developers/{id}/` (retrieve)
-- `POST /api/developers/` (create)
-- `PUT /api/developers/{id}/` (update)
-- `PATCH /api/developers/{id}/` (partial update)
-- `DELETE /api/developers/{id}/` (delete)
-
-**Permissions**
-
-- Public: `GET` (list/retrieve)
-- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
-- Manager/Superuser: `DELETE`
-
-**Search**
-
-- `GET /api/developers/?search=cai`
-- Searches in `name_en` and `name_ar`.
-
-**Fields**
-
-Required on create:
-- `name_en` (string)
-- `name_ar` (string)
-- `description_en` (string)
-- `description_ar` (string)
-- `logo` (file upload)
-
-Optional:
-- `website_url` (string; http(s)://, www., or schemeless)
-
-Read-only:
-- `id`
-- `created_at`, `updated_at`
-
-**Create example (multipart/form-data)**
-
-Fields:
-- `name_en`: `Acme Developments`
-- `name_ar`: `اكمي`
-- `description_en`: `Developer description...`
-- `description_ar`: `...`
-- `website_url`: `https://example.com`
-- `logo`: (file)
-
-**Delete behavior**
-
-When a developer is deleted:
-- any users linked to that developer will have:
-  - `role` changed to `customer`
-  - `developer` cleared (set to null)
-
----
-
-## Dashboard Users (management)
-
-- Resource: `/api/dashboard/users/`
-
-**Endpoints**
-
-- `GET /api/dashboard/users/` (list)
-- `POST /api/dashboard/users/` (create)
-- `GET /api/dashboard/users/{id}/` (retrieve)
-- `PATCH /api/dashboard/users/{id}/` (partial update)
-- `DELETE /api/dashboard/users/{id}/` (delete)
-
-**Permissions**
-
-- Manager/Superuser: all methods
-
-**Response fields (list/retrieve)**
-
-Along with basic user fields, the dashboard users API includes developer details when a user is linked to a developer:
-
-- `developer_id` (number | null)
-- `developer_name_en` (string | null)
-- `developer_name_ar` (string | null)
-- `developer_logo` (string URL | null; absolute URL)
-
-**Create (JSON or multipart/form-data)**
-
-Required:
-- `email`
-- `full_name`
-- `role` (one of: `customer`, `developer`, `content_creator`, `staff`, `manager`, `superuser`)
-- `password`
-- `password_confirm`
-
-Optional:
-- `phone`
-- `is_active` (boolean)
-- `profile_image` (file)
-- `developer_id` (required only if `role=developer`)
-
-**Role rules**
-
-- If `role=developer`, you must provide `developer_id`.
-- If `role != developer`, `developer_id` will be ignored/cleared.
-
-**Create example (JSON)**
-
-```json
-{
-  "email": "dev.user@example.com",
-  "full_name": "Dev User",
-  "role": "developer",
-  "developer_id": 3,
-  "password": "StrongPassword123!",
-  "password_confirm": "StrongPassword123!"
-}
-```
-
-**Update (PATCH) allowed fields**
-
-- `full_name`
-- `phone`
-- `role`
-- `developer_id` (only meaningful if role is `developer`)
-- `profile_image`
-- `is_active`
-
-Optional password change:
-- `new_password`
-- `new_password_confirm`
-
-**PATCH example (disable login)**
-
-```json
-{
-  "is_active": false
-}
-```
-
-**List response example (developer user)**
+**Success Response** `200 OK`
 
 ```json
 [
   {
-    "id": 12,
-    "email": "dev.user@example.com",
-    "full_name": "Dev User",
-    "phone": null,
-    "role": "developer",
-    "developer_id": 3,
-    "developer_name_en": "Acme Developments",
-    "developer_name_ar": "اكمي",
-    "developer_logo": "{{baseurl}}/media/developers/logos/acme.png",
-    "profile_image": "{{baseurl}}/media/users/profiles/u12.webp",
-    "is_active": true,
-    "created_at": "2026-01-31T10:15:30Z",
-    "updated_at": "2026-01-31T10:15:30Z"
+    "id": 1,
+    "name_en": "Egypt",
+    "name_ar": "مصر",
+    "image": "http://127.0.0.1:8000/media/countries/egypt.webp",
+    "appear_on_home_page": true,
+    "created_at": "2026-02-01T10:00:00Z"
   }
 ]
 ```
 
-**Image URL format**
-
-- `logo` is returned as an absolute URL (e.g. `{{baseurl}}/media/...`) when request context is available.
-
-#### Uploading `image` fields
-
-Several core resources include an `image` field.
-
-- When sending an image file, use `multipart/form-data`.
-- When not uploading a file (e.g., only changing text fields), `application/json` is fine.
-
-**Allowed image formats (server validation)**
-
-- WebP only: all image uploads by default (Countries, Cities, Ads, Articles, etc.)
-- Exceptions (any real image format): Sliders, Developer `logo`, User `profile_image`
-
-**Image URL format in responses**
-
-- API responses return a full (absolute) URL for file/image fields (including user `profile_image`) when request context is available (typical in DRF views), e.g. `{{baseurl}}/media/...`.
-
-**Where files are stored**
-
-- Uploaded files are stored in the database (DB-backed storage) and served via `GET /media/<path>`.
-
 ---
 
-## Unit Types
+#### Get Country Details
 
-- Resource: `/api/unit/types/`
+**Endpoint**: `GET /api/countries/{id}/`  
+**Authentication**: None (Public)
 
-**Endpoints**
-
-- `GET /api/unit/types/` (list)
-- `GET /api/unit/types/{id}/` (retrieve)
-- `POST /api/unit/types/` (create)
-- `PUT /api/unit/types/{id}/` (update)
-- `PATCH /api/unit/types/{id}/` (partial update)
-- `DELETE /api/unit/types/{id}/` (delete)
-
-**Permissions**
-- Public: `GET` (list/retrieve)
-- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
-- Manager/Superuser: `DELETE`
-
-**Fields**
-
-Required on create:
-- `name_en` (string)
-- `name_ar` (string)
-
-Read-only:
-- `id`
-
-**List example**
-
-- **GET** `/api/unit/types/`
-- **200 OK**
-
-```json
-[
-  {"id": 1, "name_en": "Apartment", "name_ar": "شقة"},
-  {"id": 2, "name_en": "Villa", "name_ar": "فيلا"}
-]
-```
-
-**Create example (JSON)**
-
-- **POST** `/api/unit/types/`
-
-```json
-{
-  "name_en": "Townhouse",
-  "name_ar": "تاون هاوس"
-}
-```
-
-**Response example**
-
-```json
-{
-  "id": 3,
-  "name_en": "Townhouse",
-  "name_ar": "تاون هاوس"
-}
-```
-
----
-
-## Countries
-
-- Resource: `/api/countries/`
-
-**List filtering**
-
-- Default: `GET /api/countries/` returns only `appear_on_home_page=true`.
-- Options:
-  - `GET /api/countries/?appear_on_home_page=true`
-  - `GET /api/countries/?appear_on_home_page=false` #for dashboard or all
-  - `GET /api/countries/?appear_on_home_page=all` (returns all)
-
-**Endpoints**
-
-- `GET /api/countries/` (list)
-- `GET /api/countries/{id}/` (retrieve)
-- `POST /api/countries/` (create)
-- `PUT /api/countries/{id}/` (update)
-- `PATCH /api/countries/{id}/` (partial update)
-- `DELETE /api/countries/{id}/` (delete)
-
-**Permissions**
-- Public: `GET` (list/retrieve)
-- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
-- Manager/Superuser: `DELETE`
-
-**Fields**
-
-Required on create:
-- `name_en` (string)
-- `name_ar` (string)
-- `image` (file)
-
-Optional:
-- `appear_on_home_page` (boolean; defaults to `false`)
-
-Read-only:
-- `id`
-- `created_at`
-
-**Create example (multipart/form-data)**
-
-Fields:
-- `name_en`: `Egypt`
-- `name_ar`: `مصر`
-- `appear_on_home_page`: `true`
-- `image`: (file)
-
-**Response example**
+**Success Response** `200 OK`
 
 ```json
 {
   "id": 1,
   "name_en": "Egypt",
   "name_ar": "مصر",
-  "image": "{{baseurl}}/media/countries/egypt.png",
+  "image": "http://127.0.0.1:8000/media/countries/egypt.webp",
   "appear_on_home_page": true,
-  "created_at": "2025-12-25T12:34:56Z"
+  "created_at": "2026-02-01T10:00:00Z"
 }
 ```
 
 ---
 
-## Cities
+### Cities (`/api/cities/`)
 
-- Resource: `/api/cities/`
+#### List Cities
 
-**List filtering**
+**Endpoint**: `GET /api/cities/`  
+**Authentication**: None (Public)
 
-- Default: `GET /api/cities/` returns only `appear_on_home_page=true`.
-- Options:
-  - `GET /api/cities/?appear_on_home_page=true`
-  - `GET /api/cities/?appear_on_home_page=false`
-  - `GET /api/cities/?appear_on_home_page=all` (returns all)
+**Query Parameters**
 
-**Endpoints**
+| Parameter | Type | Default | Options |
+|-----------|------|---------|---------|
+| `appear_on_home_page` | string | `true` | `true`, `false`, `all` |
+| `search` | string | - | Search in `name_en` or `name_ar` |
 
-- `GET /api/cities/` (list)
-- `GET /api/cities/{id}/` (retrieve)
-- `POST /api/cities/` (create)
-- `PUT /api/cities/{id}/` (update)
-- `PATCH /api/cities/{id}/` (partial update)
-- `DELETE /api/cities/{id}/` (delete)
+**Success Response** `200 OK`
 
-**Permissions**
-- Public: `GET` (list/retrieve)
-- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
-- Manager/Superuser: `DELETE`
+```json
+[
+  {
+    "id": 1,
+    "country": 1,
+    "country_name": "Egypt",
+    "name_en": "Cairo",
+    "name_ar": "القاهرة",
+    "image": "http://127.0.0.1:8000/media/cities/cairo.webp",
+    "appear_on_home_page": true,
+    "created_at": "2026-02-01T10:00:00Z",
+    "updated_at": "2026-02-01T10:00:00Z"
+  }
+]
+```
 
-**Fields**
+---
 
-Required on create:
-- `country` (number; Country ID)
-- `name_en` (string)
-- `name_ar` (string)
-- `image` (file)
+#### Get City Details
 
-Optional:
-- `appear_on_home_page` (boolean; defaults to `false`)
+**Endpoint**: `GET /api/cities/{id}/`  
+**Authentication**: None (Public)
 
-Read-only:
-- `id`
-- `country_name` (string; derived from country `name_en`)
-- `created_at`
-- `updated_at`
-
-**Create example (multipart/form-data)**
-
-Fields:
-- `country`: `1`
-- `name_en`: `Cairo`
-- `name_ar`: `القاهرة`
-- `appear_on_home_page`: `true`
-- `image`: (file)
-
-**Response example**
+**Success Response** `200 OK`
 
 ```json
 {
@@ -783,147 +438,154 @@ Fields:
   "country_name": "Egypt",
   "name_en": "Cairo",
   "name_ar": "القاهرة",
-  "image": "{{baseurl}}/media/cities/cairo.png",
+  "image": "http://127.0.0.1:8000/media/cities/cairo.webp",
   "appear_on_home_page": true,
-  "created_at": "2025-12-25T12:34:56Z",
-  "updated_at": "2025-12-25T12:34:56Z"
+  "created_at": "2026-02-01T10:00:00Z",
+  "updated_at": "2026-02-01T10:00:00Z"
 }
 ```
 
 ---
 
-## Sliders
+### Sliders (`/api/sliders/`)
 
-- Resource: `/api/sliders/`
+Home page slider images.
 
-**List filtering**
+#### List Sliders
 
-- Default: `GET /api/sliders/` returns only `appear_on_home_page=true`.
-- Options:
-  - `GET /api/sliders/?appear_on_home_page=true`
-  - `GET /api/sliders/?appear_on_home_page=false`
-  - `GET /api/sliders/?appear_on_home_page=all` (returns all)
+**Endpoint**: `GET /api/sliders/`  
+**Authentication**: None (Public)
 
-**Endpoints**
+**Query Parameters**
 
-- `GET /api/sliders/` (list)
-- `GET /api/sliders/{id}/` (retrieve)
-- `POST /api/sliders/` (create)
-- `PUT /api/sliders/{id}/` (update)
-- `PATCH /api/sliders/{id}/` (partial update)
-- `DELETE /api/sliders/{id}/` (delete)
+| Parameter | Type | Default | Options |
+|-----------|------|---------|---------|
+| `appear_on_home_page` | string | `true` | `true`, `false`, `all` |
 
-**Permissions**
-- Public: `GET` (list/retrieve)
-- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
-- Manager/Superuser: `DELETE`
+**Success Response** `200 OK`
 
-**Fields**
+```json
+[
+  {
+    "id": 1,
+    "image": "http://127.0.0.1:8000/media/sliders/slider1.jpg",
+    "appear_on_home_page": true,
+    "index": 0,
+    "created_at": "2026-02-01T10:00:00Z"
+  },
+  {
+    "id": 2,
+    "image": "http://127.0.0.1:8000/media/sliders/slider2.jpg",
+    "appear_on_home_page": true,
+    "index": 1,
+    "created_at": "2026-02-01T10:00:00Z"
+  }
+]
+```
 
-Required on create:
-- `image` (file)
+---
 
-Optional:
-- `appear_on_home_page` (boolean; defaults to `true`)
-- `index` (number; controls ordering; lower comes first)
+#### Get Slider Details
 
-Read-only:
-- `id`
-- `created_at`
+**Endpoint**: `GET /api/sliders/{id}/`  
+**Authentication**: None (Public)
 
-**Response example**
+**Success Response** `200 OK`
 
 ```json
 {
   "id": 1,
-  "image": "{{baseurl}}/media/sliders/slide1.jpg",
+  "image": "http://127.0.0.1:8000/media/sliders/slider1.jpg",
   "appear_on_home_page": true,
   "index": 0,
-  "created_at": "2025-12-25T12:34:56Z"
+  "created_at": "2026-02-01T10:00:00Z"
 }
 ```
 
-**Ordering**
+---
 
-- Sliders are returned ordered by `index` ascending, then `id`.
+### Advertisements (`/api/ads/`)
+
+#### List Ads
+
+**Endpoint**: `GET /api/ads/`  
+**Authentication**: None (Public)
+
+**Success Response** `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "image": "http://127.0.0.1:8000/media/ads/ad1.webp",
+    "appear_place": "home",
+    "created_at": "2026-02-01T10:00:00Z"
+  },
+  {
+    "id": 2,
+    "image": "http://127.0.0.1:8000/media/ads/ad2.webp",
+    "appear_place": "projects",
+    "created_at": "2026-02-01T10:00:00Z"
+  }
+]
+```
+
+**Appear Place Options**: `home`, `projects`, `units`, `other`
 
 ---
 
-## Ads
+#### Get Ad Details
 
-- Resource: `/api/ads/`
+**Endpoint**: `GET /api/ads/{id}/`  
+**Authentication**: None (Public)
 
-**Endpoints**
-
-- `GET /api/ads/` (list)
-- `GET /api/ads/{id}/` (retrieve)
-- `POST /api/ads/` (create)
-- `PUT /api/ads/{id}/` (update)
-- `PATCH /api/ads/{id}/` (partial update)
-- `DELETE /api/ads/{id}/` (delete)
-
-**Permissions**
-- Public: `GET` (list/retrieve)
-- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
-- Manager/Superuser: `DELETE`
-
-**Fields**
-
-Required on create:
-- `image` (file)
-- `appear_place` (string; one of: `home`, `projects`, `units`, `other`)
-
-Read-only:
-- `id`
-- `created_at`
-
-**Create example (multipart/form-data)**
-
-Fields:
-- `appear_place`: `home`
-- `image`: (file)
-
-**Response example**
+**Success Response** `200 OK`
 
 ```json
 {
   "id": 1,
-  "image": "{{baseurl}}/media/ads/ad1.jpg",
+  "image": "http://127.0.0.1:8000/media/ads/ad1.webp",
   "appear_place": "home",
-  "created_at": "2025-12-25T12:34:56Z"
+  "created_at": "2026-02-01T10:00:00Z"
 }
 ```
 
 ---
 
-## Features
+### Features (`/api/features/`)
 
-- Resource: `/api/features/`
+Property features (pool, gym, parking, etc.)
 
-**Endpoints**
+#### List Features
 
-- `GET /api/features/` (list)
-- `GET /api/features/{id}/` (retrieve)
-- `POST /api/features/` (create)
-- `PUT /api/features/{id}/` (update)
-- `PATCH /api/features/{id}/` (partial update)
-- `DELETE /api/features/{id}/` (delete)
+**Endpoint**: `GET /api/features/`  
+**Authentication**: None (Public)
 
-**Permissions**
-- Public: `GET` (list/retrieve)
-- Staff/Manager/Superuser: `POST`, `PUT`, `PATCH`
-- Manager/Superuser: `DELETE`
+**Query Parameters**
 
-**Fields**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `search` | string | Search in `name_en` or `name_ar` |
 
-Required on create:
-- `name_en` (string)
-- `name_ar` (string)
+**Success Response** `200 OK`
 
-Read-only:
-- `id`
+```json
+[
+  {"id": 1, "name_en": "Swimming Pool", "name_ar": "حمام سباحة"},
+  {"id": 2, "name_en": "Gym", "name_ar": "صالة رياضية"},
+  {"id": 3, "name_en": "Parking", "name_ar": "موقف سيارات"},
+  {"id": 4, "name_en": "Garden", "name_ar": "حديقة"}
+]
+```
 
-**Response example**
+---
+
+#### Get Feature Details
+
+**Endpoint**: `GET /api/features/{id}/`  
+**Authentication**: None (Public)
+
+**Success Response** `200 OK`
 
 ```json
 {
@@ -935,230 +597,1092 @@ Read-only:
 
 ---
 
-## Articles
+### Articles (`/api/articles/`)
 
-- Resource: `/api/articles/`
+Blog articles and news.
 
-**Endpoints**
+#### List Articles
 
-- `GET /api/articles/` (list)
-- `GET /api/articles/{id}/` (retrieve)
-- `POST /api/articles/` (create)
-- `PUT /api/articles/{id}/` (update)
-- `PATCH /api/articles/{id}/` (partial update)
-- `DELETE /api/articles/{id}/` (delete)
+**Endpoint**: `GET /api/articles/`  
+**Authentication**: None (Public)
 
-**Permissions**
-- Public: `GET` (list/retrieve)
-- Content Creator / Manager / Superuser: `POST`, `PUT`, `PATCH`
-- Content Creator / Manager / Superuser: `DELETE`
+**Query Parameters**
 
-**Fields**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `search` | string | Search in `title_en` or `title_ar` |
 
-Required on create:
-- `title_en` (string)
-- `title_ar` (string)
-- `content_en_md` (string; markdown)
-- `content_ar_md` (string; markdown)
-- `image` (file)
-
-Optional:
-- `meta` (object; can be null)
-
-Read-only:
-- `id`
-- `created_at`
-- `updated_at`
-
-**Create example (multipart/form-data)**
-
-Fields:
-- `title_en`: `Market Update`
-- `title_ar`: `تحديث السوق`
-- `content_en_md`: `# Heading\n\nMarkdown...`
-- `content_ar_md`: `# عنوان\n\nMarkdown...`
-- `meta`: `{ "tags": ["news"], "reading_time": 5 }`
-- `image`: (file)
-
-**Response example**
-
-```json
-{
-  "id": 1,
-  "title_en": "Market Update",
-  "title_ar": "تحديث السوق",
-  "content_en_md": "# Heading\n\nMarkdown...",
-  "content_ar_md": "# عنوان\n\nMarkdown...",
-  "meta": {"tags": ["news"], "reading_time": 5},
-  "image": "{{baseurl}}/media/articles/article1.jpg",
-  "created_at": "2025-12-25T12:34:56Z",
-  "updated_at": "2025-12-25T12:34:56Z"
-}
-```
-
----
-
-## Permission quick matrix (core)
-
-- **Public (no token)**: list/retrieve for all core resources
-- **Staff/Manager/Superuser**: create/update for Countries, Cities, Sliders, Ads, Features
-- **Manager/Superuser**: delete for Countries, Cities, Sliders, Ads, Features
-- **Unit Types**:
-  - public: list/retrieve
-  - create/update: Staff OR Manager OR Superuser
-  - delete: Manager OR Superuser
-- **Articles**:
-  - create/update: Content Creator OR Manager OR Superuser
-  - delete: Content Creator OR Manager OR Superuser
-
----
-
-## Customer API endpoints (`/api/customer/`)
-
-### Customer Inquiries
-
-- Resource: `/api/customer/inqury/` (note: `inqury` is the backend path)
-
-**Endpoints**
-
-- `POST /api/customer/inqury/` (create inquiry; customer only)
-- `GET /api/customer/inqury/` (list inquiries; staff/manager/superuser)
-- `PATCH /api/customer/inqury/{id}/contacted/` (update only `is_contacted`; staff/manager/superuser)
-
-#### Create inquiry (Website/App)
-
-- **POST** `/api/customer/inqury/`
-- **Auth**: Yes
-- **Role**: `customer`
-- **Content-Type**: `application/json`
-
-**Request body fields**
-
-Required:
-- `phone` (string)
-- `message` (string)
-- `interested_in` (number; UnitType ID)
-- `project_id` (number) and/or `unit_id` (number)
-
-Not allowed / read-only:
-- `customer_id` (derived from authenticated user)
-- `is_contacted` (defaults to `false`, staff updates it later)
-- `created_at`
-
-**Example (JSON)**
-
-```json
-{
-  "phone": "+201234567890",
-  "message": "I want more details",
-  "interested_in": 1,
-  "project_id": 10
-}
-```
-
-**Success response**
-
-- **201 Created**
-
-```json
-{
-  "id": 5,
-  "customer_id": 1,
-  "phone": "+201234567890",
-  "message": "I want more details",
-  "interested_in": 1,
-  "interested_in_name_en": "Apartment",
-  "interested_in_name_ar": "شقة",
-  "project_id": 10,
-  "unit_id": null,
-  "is_contacted": false,
-  "created_at": "2026-01-31T10:15:30Z"
-}
-```
-
-**Common error responses**
-
-- **400 Bad Request** (validation)
-
-```json
-{
-  "interested_in": ["This field is required."]
-}
-```
-
-```json
-{
-  "non_field_errors": ["Provide project_id and/or unit_id."]
-}
-```
-
-- **403 Forbidden** (not a customer)
-
----
-
-#### List inquiries (Dashboard)
-
-- **GET** `/api/customer/inqury/`
-- **Auth**: Yes
-- **Role**: `staff|manager|superuser`
-
-**Success response**
-
-- **200 OK**
+**Success Response** `200 OK`
 
 ```json
 [
   {
-    "id": 5,
-    "customer_id": 1,
-    "phone": "+201234567890",
-    "message": "I want more details",
-    "interested_in": 1,
-    "interested_in_name_en": "Apartment",
-    "interested_in_name_ar": "شقة",
-    "project_id": 10,
-    "unit_id": null,
-    "is_contacted": false,
-    "created_at": "2026-01-31T10:15:30Z"
+    "id": 1,
+    "title_en": "Top 10 Real Estate Investment Tips",
+    "title_ar": "أفضل 10 نصائح للاستثمار العقاري",
+    "content_en_md": "# Introduction\n\nReal estate investment...",
+    "content_ar_md": "# مقدمة\n\nالاستثمار العقاري...",
+    "meta": {
+      "author": "John Doe",
+      "category": "Investment"
+    },
+    "image": "http://127.0.0.1:8000/media/articles/article1.webp",
+    "created_at": "2026-02-01T10:00:00Z",
+    "updated_at": "2026-02-01T10:00:00Z"
   }
 ]
 ```
 
 ---
 
-#### Mark inquiry as contacted (Dashboard)
+#### Get Article Details
 
-- **PATCH** `/api/customer/inqury/{id}/contacted/`
-- **Auth**: Yes
-- **Role**: `staff|manager|superuser`
-- **Content-Type**: `application/json`
+**Endpoint**: `GET /api/articles/{id}/`  
+**Authentication**: None (Public)
 
-**Request body**
+**Success Response** `200 OK`
 
 ```json
 {
-  "is_contacted": true
+  "id": 1,
+  "title_en": "Top 10 Real Estate Investment Tips",
+  "title_ar": "أفضل 10 نصائح للاستثمار العقاري",
+  "content_en_md": "# Introduction\n\nReal estate investment is one of...",
+  "content_ar_md": "# مقدمة\n\nالاستثمار العقاري هو أحد...",
+  "meta": {
+    "author": "John Doe",
+    "category": "Investment",
+    "tags": ["investment", "real estate", "tips"]
+  },
+  "image": "http://127.0.0.1:8000/media/articles/article1.webp",
+  "created_at": "2026-02-01T10:00:00Z",
+  "updated_at": "2026-02-01T10:00:00Z"
 }
 ```
-
-**Success response**
-
-- **200 OK**
-
-```json
-{
-  "is_contacted": true
-}
-```
-
-**Common error responses**
-
-- **404 Not Found** (invalid inquiry id)
-- **403 Forbidden** (not staff/manager/superuser)
 
 ---
 
-## Django Admin (server panel)
+### Unit Types (`/api/unit/types/`)
 
-- URL: `/admin/`
-- Access: only users with `is_superuser=true` (created via `python manage.py createsuperuser`).
+Types of properties (apartment, villa, office, etc.)
+
+#### List Unit Types
+
+**Endpoint**: `GET /api/unit/types/`  
+**Authentication**: None (Public)
+
+**Query Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `search` | string | Search in `name_en` or `name_ar` |
+
+**Success Response** `200 OK`
+
+```json
+[
+  {"id": 1, "name_en": "Apartment", "name_ar": "شقة"},
+  {"id": 2, "name_en": "Villa", "name_ar": "فيلا"},
+  {"id": 3, "name_en": "Office", "name_ar": "مكتب"},
+  {"id": 4, "name_en": "Shop", "name_ar": "محل تجاري"},
+  {"id": 5, "name_en": "Land", "name_ar": "أرض"}
+]
+```
+
+---
+
+#### Get Unit Type Details
+
+**Endpoint**: `GET /api/unit/types/{id}/`  
+**Authentication**: None (Public)
+
+**Success Response** `200 OK`
+
+```json
+{
+  "id": 1,
+  "name_en": "Apartment",
+  "name_ar": "شقة"
+}
+```
+
+---
+
+### Developers (`/api/developers/`)
+
+Real estate development companies.
+
+#### List Developers
+
+**Endpoint**: `GET /api/developers/`  
+**Authentication**: None (Public)
+
+**Query Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `search` | string | Search in `name_en` or `name_ar` |
+
+**Success Response** `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "name_en": "Emaar Properties",
+    "name_ar": "إعمار العقارية",
+    "description_en": "Leading real estate developer in the Middle East.",
+    "description_ar": "شركة عقارية رائدة في الشرق الأوسط.",
+    "logo": "http://127.0.0.1:8000/media/developers/logos/emaar.jpg",
+    "website_url": "https://www.emaar.com",
+    "created_at": "2026-02-01T10:00:00Z",
+    "updated_at": "2026-02-01T10:00:00Z"
+  }
+]
+```
+
+---
+
+#### Get Developer Details
+
+**Endpoint**: `GET /api/developers/{id}/`  
+**Authentication**: None (Public)
+
+**Success Response** `200 OK`
+
+```json
+{
+  "id": 1,
+  "name_en": "Emaar Properties",
+  "name_ar": "إعمار العقارية",
+  "description_en": "Leading real estate developer in the Middle East with projects across multiple countries.",
+  "description_ar": "شركة عقارية رائدة في الشرق الأوسط مع مشاريع في عدة دول.",
+  "logo": "http://127.0.0.1:8000/media/developers/logos/emaar.jpg",
+  "website_url": "https://www.emaar.com",
+  "created_at": "2026-02-01T10:00:00Z",
+  "updated_at": "2026-02-01T10:00:00Z"
+}
+```
+
+---
+
+### Customer Inquiries (`/api/customer/inqury/`)
+
+Submit inquiries about properties.
+
+#### Create Inquiry
+
+**Endpoint**: `POST /api/customer/inqury/`  
+**Authentication**: Required (Customer role only)
+
+**Request Body**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `phone` | string |  Yes | Contact phone number |
+| `message` | string | Yes | Inquiry message |
+| `interested_in` | integer | Yes | Unit type ID |
+| `project_id` | integer | Conditional | Project ID (at least one of project_id or unit_id required) |
+| `unit_id` | integer | Conditional | Unit ID (at least one of project_id or unit_id required) |
+
+**Example Request**
+
+```json
+{
+  "phone": "+201234567890",
+  "message": "I'm interested in learning more about the available apartments in this project.",
+  "interested_in": 1,
+  "project_id": 5,
+  "unit_id": null
+}
+```
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 10,
+  "customer_id": 1,
+  "phone": "+201234567890",
+  "message": "I'm interested in learning more about the available apartments in this project.",
+  "interested_in": 1,
+  "interested_in_name_en": "Apartment",
+  "interested_in_name_ar": "شقة",
+  "project_id": 5,
+  "unit_id": null,
+  "is_contacted": false,
+  "created_at": "2026-02-03T14:00:00Z"
+}
+```
+
+**Error Responses**
+
+```json
+// 400 - Missing interested_in
+{"interested_in": ["This field is required."]}
+
+// 400 - No project or unit specified
+{"non_field_errors": ["Provide project_id and/or unit_id."]}
+
+// 403 - Not a customer
+{"detail": "You do not have permission to perform this action."}
+```
+
+---
+
+## Dashboard Endpoints
+
+Admin panel endpoints for staff, managers, content creators, and superusers.
+
+---
+
+### User Management (`/api/dashboard/users/`)
+
+**Permissions**:
+- **Manager**: Can see all users EXCEPT superusers
+- **Superuser**: Can see ALL users including other superusers
+
+#### List Users
+
+**Endpoint**: `GET /api/dashboard/users/`  
+**Authentication**: Required (Manager or Superuser)
+
+**Success Response** `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "email": "manager@example.com",
+    "full_name": "Jane Manager",
+    "phone": "+201234567890",
+    "role": "manager",
+    "developer_id": null,
+    "developer_name_en": null,
+    "developer_name_ar": null,
+    "developer_logo": null,
+    "profile_image": "http://127.0.0.1:8000/media/users/profiles/jane.jpg",
+    "is_active": true,
+    "created_at": "2026-01-15T10:00:00Z",
+    "updated_at": "2026-02-01T10:00:00Z"
+  },
+  {
+    "id": 3,
+    "email": "developer@example.com",
+    "full_name": "Developer User",
+    "phone": "+201234567892",
+    "role": "developer",
+    "developer_id": 1,
+    "developer_name_en": "Emaar Properties",
+    "developer_name_ar": "إعمار العقارية",
+    "developer_logo": "http://127.0.0.1:8000/media/developers/logos/emaar.jpg",
+    "profile_image": null,
+    "is_active": true,
+    "created_at": "2026-01-25T10:00:00Z",
+    "updated_at": "2026-01-25T10:00:00Z"
+  }
+]
+```
+
+---
+
+#### Get User Details
+
+**Endpoint**: `GET /api/dashboard/users/{id}/`  
+**Authentication**: Required (Manager or Superuser)
+
+**Success Response** `200 OK`
+
+```json
+{
+  "id": 1,
+  "email": "manager@example.com",
+  "full_name": "Jane Manager",
+  "phone": "+201234567890",
+  "role": "manager",
+  "developer_id": null,
+  "developer_name_en": null,
+  "developer_name_ar": null,
+  "developer_logo": null,
+  "profile_image": "http://127.0.0.1:8000/media/users/profiles/jane.jpg",
+  "is_active": true,
+  "created_at": "2026-01-15T10:00:00Z",
+  "updated_at": "2026-02-01T10:00:00Z"
+}
+```
+
+---
+
+#### Create User
+
+**Endpoint**: `POST /api/dashboard/users/`  
+**Authentication**: Required (Manager or Superuser)
+
+**Request Body** (`multipart/form-data` for file upload)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `email` | string | Yes | Unique email |
+| `full_name` | string | Yes | User's full name |
+| `password` | string | Yes | Password (min 8 chars) |
+| `password_confirm` | string | Yes | Must match password |
+| `role` | string | Yes | `customer`, `developer`, `content_creator`, `staff`, `manager`, `superuser` |
+| `phone` | string | Optional | Phone number |
+| `developer_id` | integer | Conditional | Required if role is `developer` |
+| `profile_image` | file |  Optional | Profile image |
+| `is_active` | boolean | Optional | Default: `true` |
+
+**Example Request**
+
+```json
+{
+  "email": "newstaff@example.com",
+  "full_name": "New Staff Member",
+  "password": "SecurePass123!",
+  "password_confirm": "SecurePass123!",
+  "role": "staff",
+  "phone": "+201234567893",
+  "is_active": true
+}
+```
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 15,
+  "email": "newstaff@example.com",
+  "full_name": "New Staff Member",
+  "phone": "+201234567893",
+  "role": "staff",
+  "developer_id": null,
+  "developer_name_en": null,
+  "developer_name_ar": null,
+  "developer_logo": null,
+  "profile_image": null,
+  "is_active": true,
+  "created_at": "2026-02-03T14:00:00Z",
+  "updated_at": "2026-02-03T14:00:00Z"
+}
+```
+
+**Error Responses**
+
+```json
+// 400 - Developer role without developer_id
+{"developer_id": ["Developer is required when role is developer."]}
+
+// 400 - Email already exists
+{"email": ["A user with this email already exists."]}
+```
+
+---
+
+#### Update User
+
+**Endpoints**:  
+- `PATCH /api/dashboard/users/{id}/` (partial)  
+- `PUT /api/dashboard/users/{id}/` (full)
+
+**Authentication**: Required (Manager or Superuser)
+
+**Request Body** (All optional for PATCH)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `full_name` | string | User's full name |
+| `phone` | string | Phone number |
+| `role` | string | User role |
+| `developer_id` | integer | Required if changing role to `developer` |
+| `profile_image` | file | Profile image |
+| `is_active` | boolean | Account status |
+| `new_password` | string | New password |
+| `new_password_confirm` | string | Required if `new_password` provided |
+
+**Example Request**
+
+```json
+{
+  "full_name": "Updated Staff Member",
+  "role": "manager",
+  "is_active": true
+}
+```
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete User
+
+**Endpoint**: `DELETE /api/dashboard/users/{id}/`  
+**Authentication**: Required (Manager or Superuser)
+
+**Success Response** `204 No Content`
+
+---
+
+### Countries Management (Dashboard)
+
+#### Create Country
+
+**Endpoint**: `POST /api/countries/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Request Body** (`multipart/form-data`)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name_en` | string |  Yes | English name (unique) |
+| `name_ar` | string |  Yes | Arabic name (unique) |
+| `image` | file | Yes | Country image (.webp format  only accepted) |
+| `appear_on_home_page` | boolean | Optional | Default: `false` |
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 3,
+  "name_en": "Saudi Arabia",
+  "name_ar": "المملكة العربية السعودية",
+  "image": "http://127.0.0.1:8000/media/countries/saudi.webp",
+  "appear_on_home_page": false,
+  "created_at": "2026-02-03T14:00:00Z"
+}
+```
+
+---
+
+#### Update Country
+
+**Endpoints**:  
+- `PATCH /api/countries/{id}/` (partial)  
+- `PUT /api/countries/{id}/` (full)
+
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete Country
+
+**Endpoint**: `DELETE /api/countries/{id}/`  
+**Authentication**: Required (Manager or Superuser only)
+
+**Success Response** `204 No Content`
+
+---
+
+### Cities Management (Dashboard)
+
+#### Create City
+
+**Endpoint**: `POST /api/cities/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Request Body** (`multipart/form-data`)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `country` | integer |  Yes | Country ID |
+| `name_en` | string |  Yes | English name |
+| `name_ar` | string | Yes | Arabic name |
+| `image` | file | Yes | City image (.webp format only accepted) |
+| `appear_on_home_page` | boolean | Optional | Default: `false` |
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 5,
+  "country": 1,
+  "country_name": "Egypt",
+  "name_en": "Giza",
+  "name_ar": "الجيزة",
+  "image": "http://127.0.0.1:8000/media/cities/giza.webp",
+  "appear_on_home_page": false,
+  "created_at": "2026-02-03T14:00:00Z",
+  "updated_at": "2026-02-03T14:00:00Z"
+}
+```
+
+---
+
+#### Update City
+
+**Endpoints**:  
+- `PATCH /api/cities/{id}/` (partial)  
+- `PUT /api/cities/{id}/` (full)
+
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete City
+
+**Endpoint**: `DELETE /api/cities/{id}/`  
+**Authentication**: Required (Manager or Superuser only)
+
+**Success Response** `204 No Content`
+
+---
+
+### Sliders Management (Dashboard)
+
+#### Create Slider
+
+**Endpoint**: `POST /api/sliders/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Request Body** (`multipart/form-data`)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `image` | file | Yes | Slider image "accept any img type" |
+| `appear_on_home_page` | boolean | Optional | Default: `true` |
+| `index` | integer | Optional | Display order (default: `0`) |
+
+**Note**: If index conflicts with existing slider, the existing one will be auto-reassigned.
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 4,
+  "image": "http://127.0.0.1:8000/media/sliders/slider4.jpg",
+  "appear_on_home_page": true,
+  "index": 0,
+  "created_at": "2026-02-03T14:00:00Z"
+}
+```
+
+---
+
+#### Update Slider
+
+**Endpoints**:  
+- `PATCH /api/sliders/{id}/` (partial)  
+- `PUT /api/sliders/{id}/` (full)
+
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete Slider
+
+**Endpoint**: `DELETE /api/sliders/{id}/`  
+**Authentication**: Required (Manager or Superuser only)
+
+**Success Response** `204 No Content`
+
+---
+
+### 📢 Ads Management (Dashboard)
+
+#### Create Ad
+
+**Endpoint**: `POST /api/ads/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Request Body** (`multipart/form-data`)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `image` | file | Yes | Ad image (.webp format  only accepted) |
+| `appear_place` | string | Yes | `home`, `projects`, `units`, or `other` |
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 3,
+  "image": "http://127.0.0.1:8000/media/ads/ad3.webp",
+  "appear_place": "units",
+  "created_at": "2026-02-03T14:00:00Z"
+}
+```
+
+---
+
+#### Update Ad
+
+**Endpoints**:  
+- `PATCH /api/ads/{id}/` (partial)  
+- `PUT /api/ads/{id}/` (full)
+
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete Ad
+
+**Endpoint**: `DELETE /api/ads/{id}/`  
+**Authentication**: Required (Manager or Superuser only)
+
+**Success Response** `204 No Content`
+
+---
+
+### Features Management (Dashboard)
+
+#### Create Feature
+
+**Endpoint**: `POST /api/features/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Request Body**
+
+| Field | Type | Required |
+|-------|------|----------|
+| `name_en` | string | Yes |
+| `name_ar` | string | Yes |
+
+**Example Request**
+
+```json
+{
+  "name_en": "Balcony",
+  "name_ar": "شرفة"
+}
+```
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 5,
+  "name_en": "Balcony",
+  "name_ar": "شرفة"
+}
+```
+
+---
+
+#### Update Feature
+
+**Endpoints**:  
+- `PATCH /api/features/{id}/` (partial)  
+- `PUT /api/features/{id}/` (full)
+
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete Feature
+
+**Endpoint**: `DELETE /api/features/{id}/`  
+**Authentication**: Required (Manager or Superuser only)
+
+**Success Response** `204 No Content`
+
+---
+
+### Articles Management (Dashboard)
+
+#### Create Article
+
+**Endpoint**: `POST /api/articles/`  
+**Authentication**: Required (Content Creator, Manager, or Superuser)
+
+**Request Body** (`multipart/form-data`)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title_en` | string | Yes | English title |
+| `title_ar` | string | Yes | Arabic title |
+| `content_en_md` | string | Yes | English content (Markdown only format accepted) |
+| `content_ar_md` | string | Yes | Arabic content (Markdown only format accepted) |
+| `image` | file | Yes | Article image (.webp format only accepted) |
+| `meta` | object | Optional | JSON metadata |
+
+**Example Request**
+
+```json
+{
+  "title_en": "Future of Real Estate in Egypt",
+  "title_ar": "مستقبل العقارات في مصر",
+  "content_en_md": "# Introduction\n\nThe real estate market in Egypt...",
+  "content_ar_md": "# مقدمة\n\nسوق العقارات في مصر...",
+  "meta": {
+    "author": "Jane Doe",
+    "category": "Market Analysis",
+    "tags": ["egypt", "real estate", "market"]
+  }
+}
+```
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 3,
+  "title_en": "Future of Real Estate in Egypt",
+  "title_ar": "مستقبل العقارات في مصر",
+  "content_en_md": "# Introduction\n\nThe real estate market in Egypt...",
+  "content_ar_md": "# مقدمة\n\nسوق العقارات في مصر...",
+  "meta": {
+    "author": "Jane Doe",
+    "category": "Market Analysis",
+    "tags": ["egypt", "real estate", "market"]
+  },
+  "image": "http://127.0.0.1:8000/media/articles/article3.webp",
+  "created_at": "2026-02-03T14:00:00Z",
+  "updated_at": "2026-02-03T14:00:00Z"
+}
+```
+
+---
+
+#### Update Article
+
+**Endpoints**:  
+- `PATCH /api/articles/{id}/` (partial)  
+- `PUT /api/articles/{id}/` (full)
+
+**Authentication**: Required (Content Creator, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete Article
+
+**Endpoint**: `DELETE /api/articles/{id}/`  
+**Authentication**: Required (Content Creator, Manager, or Superuser)
+
+**Success Response** `204 No Content`
+
+---
+
+### Unit Types Management (Dashboard)
+
+#### Create Unit Type
+
+**Endpoint**: `POST /api/unit/types/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Request Body**
+
+| Field | Type | Required |
+|-------|------|----------|
+| `name_en` | string |  Yes (unique) |
+| `name_ar` | string |  Yes (unique) |
+
+**Example Request**
+
+```json
+{
+  "name_en": "Penthouse",
+  "name_ar": "بنتهاوس"
+}
+```
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 6,
+  "name_en": "Penthouse",
+  "name_ar": "بنتهاوس"
+}
+```
+
+---
+
+#### Update Unit Type
+
+**Endpoints**:  
+- `PATCH /api/unit/types/{id}/` (partial)  
+- `PUT /api/unit/types/{id}/` (full)
+
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete Unit Type
+
+**Endpoint**: `DELETE /api/unit/types/{id}/`  
+**Authentication**: Required (Manager or Superuser only)
+
+**Success Response** `204 No Content`
+
+---
+
+### Developers Management (Dashboard)
+
+#### Create Developer
+
+**Endpoint**: `POST /api/developers/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Request Body** (`multipart/form-data`)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name_en` | string | Yes | English name |
+| `name_ar` | string | Yes | Arabic name |
+| `description_en` | string | Yes | English description |
+| `description_ar` | string | Yes | Arabic description |
+| `logo` | file | Yes | Developer logo |
+| `website_url` | string | Optional | Website URL (http/https) |
+
+**Success Response** `201 Created`
+
+```json
+{
+  "id": 3,
+  "name_en": "Sodic",
+  "name_ar": "سوديك",
+  "description_en": "One of the region's leading real estate development companies.",
+  "description_ar": "واحدة من الشركات الرائدة في تطوير العقارات في المنطقة.",
+  "logo": "http://127.0.0.1:8000/media/developers/logos/sodic.jpg",
+  "website_url": "https://www.sodic.com",
+  "created_at": "2026-02-03T14:00:00Z",
+  "updated_at": "2026-02-03T14:00:00Z"
+}
+```
+
+---
+
+#### Update Developer
+
+**Endpoints**:  
+- `PATCH /api/developers/{id}/` (partial)  
+- `PUT /api/developers/{id}/` (full)
+
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+---
+
+#### Delete Developer
+
+**Endpoint**: `DELETE /api/developers/{id}/`  
+**Authentication**: Required (Manager or Superuser only)
+
+**Important**: All users linked to this developer will be converted to `customer` role.
+
+**Success Response** `204 No Content`
+
+---
+
+### Customer Inquiries Management (Dashboard)
+
+#### List All Inquiries
+
+**Endpoint**: `GET /api/customer/inqury/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Success Response** `200 OK`
+
+```json
+[
+  {
+    "id": 10,
+    "customer_id": 5,
+    "phone": "+201234567890",
+    "message": "I'm interested in learning more about the available apartments.",
+    "interested_in": 1,
+    "interested_in_name_en": "Apartment",
+    "interested_in_name_ar": "شقة",
+    "project_id": 5,
+    "unit_id": null,
+    "is_contacted": false,
+    "created_at": "2026-02-03T14:00:00Z"
+  },
+  {
+    "id": 9,
+    "customer_id": 3,
+    "phone": "+201234567891",
+    "message": "What is the price range for villas?",
+    "interested_in": 2,
+    "interested_in_name_en": "Villa",
+    "interested_in_name_ar": "فيلا",
+    "project_id": 3,
+    "unit_id": 12,
+    "is_contacted": true,
+    "created_at": "2026-02-02T10:00:00Z"
+  }
+]
+```
+
+---
+
+#### Mark Inquiry as Contacted
+
+**Endpoint**: `PATCH /api/customer/inqury/{id}/contacted/`  
+**Authentication**: Required (Staff, Manager, or Superuser)
+
+**Request Body**
+
+| Field | Type | Required |
+|-------|------|----------|
+| `is_contacted` | boolean | Yes |
+
+**Example Request**
+
+```json
+{
+  "is_contacted": true
+}
+```
+
+**Success Response** `200 OK`
+
+```json
+{
+  "is_contacted": true
+}
+```
+
+---
+
+## User Roles & Permissions Matrix
+
+### Complete Permission Table
+
+| Endpoint | Public | Customer | Developer | Content Creator | Staff | Manager | Superuser |
+|----------|--------|----------|-----------|-----------------|-------|---------|-----------|
+| **Authentication** |
+| Register | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Login | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Refresh Token | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Me (GET/PATCH) | - | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Logout | - | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Public Resources (GET)** |
+| Countries | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Cities | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Sliders | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Ads | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Features | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Articles | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Unit Types | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Developers | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Dashboard CRUD** |
+| Countries (POST/PATCH) | - | - | - | - | ✅ | ✅ | ✅ |
+| Countries (DELETE) | - | - | - | - | - | ✅ | ✅ |
+| Cities (POST/PATCH) | - | - | - | - | ✅ | ✅ | ✅ |
+| Cities (DELETE) | - | - | - | - | - | ✅ | ✅ |
+| Sliders (POST/PATCH) | - | - | - | - | ✅ | ✅ | ✅ |
+| Sliders (DELETE) | - | - | - | - | - | ✅ | ✅ |
+| Ads (POST/PATCH) | - | - | - | - | ✅ | ✅ | ✅ |
+| Ads (DELETE) | - | - | - | - | - | ✅ | ✅ |
+| Features (POST/PATCH) | - | - | - | - | ✅ | ✅ | ✅ |
+| Features (DELETE) | - | - | - | - | - | ✅ | ✅ |
+| Articles (POST/PATCH/DELETE) | - | - | - | ✅ | - | ✅ | ✅ |
+| Unit Types (POST/PATCH) | - | - | - | - | ✅ | ✅ | ✅ |
+| Unit Types (DELETE) | - | - | - | - | - | ✅ | ✅ |
+| Developers (POST/PATCH) | - | - | - | - | ✅ | ✅ | ✅ |
+| Developers (DELETE) | - | - | - | - | - | ✅ | ✅ |
+| **Customer Features** |
+| Inquiry (POST) | - | ✅ | - | - | - | - | - |
+| Inquiries (GET) | - | - | - | - | ✅ | ✅ | ✅ |
+| Inquiry Contact (PATCH) | - | - | - | - | ✅ | ✅ | ✅ |
+| **User Management** |
+| Users (GET) | - | - | - | - | - | ✅ | ✅ |
+| Users (POST/PATCH/DELETE) | - | - | - | - | - | ✅ | ✅ |
+
+### Role Hierarchy
+
+```
+superuser (Complete system access)
+    ↓
+manager (Dashboard full access, CANNOT see superusers)
+    ↓
+staff (Dashboard CRUD, no delete permissions)
+    ↓
+content_creator (Article management only)
+    ↓
+developer (Developer-specific features)
+    ↓
+customer (Public access + inquiry submission)
+```
+
+---
+
+## Common Patterns & Best Practices
+
+### File Uploads
+
+**Image Format Requirements**:
+- **WebP only**: Countries, Cities, Ads, Articles
+- **Any image format**: Sliders, Developer logos, User profile images
+
+**Upload Headers**:
+```
+Content-Type: multipart/form-data
+Authorization: Bearer <access_token>
+```
+
+### Search Functionality
+
+Most list endpoints support text search via `?search=query`:
+
+**Searchable Fields by Resource**:
+- Countries/Cities: `name_en`, `name_ar`
+- Features: `name_en`, `name_ar`
+- Unit Types: `name_en`, `name_ar`
+- Articles: `title_en`, `title_ar`
+- Developers: `name_en`, `name_ar`
+
+**Example**:
+```
+GET /api/countries/?search=egypt
+GET /api/articles/?search=investment
+```
+
+### Filtering
+
+**Homepage Visibility**:
+```
+GET /api/countries/?appear_on_home_page=true   # Show only homepage items
+GET /api/countries/?appear_on_home_page=false  # Show non-homepage items
+GET /api/countries/?appear_on_home_page=all    # Show all items
+```
+
+### Pagination
+
+API responses may include pagination:
+
+```json
+{
+  "count": 100,
+  "next": "http://127.0.0.1:8000/api/countries/?page=2",
+  "previous": null,
+  "results": [...]
+}
+```
+
+## Swagger UI Integration
+
+Access interactive API documentation at: `/`
+
+**Features**:
+- Try endpoints directly from browser
+- View all request/response schemas
+- Test authentication with JWT tokens
+
+**Authorization in Swagger**:
+1. Click **Authorize** button
+2. Enter: `Bearer <your_access_token>`
+3. Click **Authorize**
+4. All requests will include the token
+
+---
+
+## Contact & Support
+
+- **Swagger Documentation**: `/`
+or talk with me @bassanthossamxx & bassanthosamm1@outlook.com
